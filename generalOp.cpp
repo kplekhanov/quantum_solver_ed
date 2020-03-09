@@ -26,7 +26,11 @@ namespace quantum_solver_ed{
 	WaveFon<T> applyNonSym(const WaveFon<T>& phi_in) const;
 	WaveFon<T> applySym(const WaveFon<T>& phi_in) const;
 	void doLanczosOnFly(uword N, double err);
+	void createDenseMatrix();
+	void createDenseMatrixSym();
 	void createDenseMatrixNonSym();
+	void createSparseMatrix();
+	void createSparseMatrixSym();
 	void createSparseMatrixNonSym();
 	const Mat<T>* getDenseMatrixPtr() const;
 	const SpMat<T>* getSparseMatrixPtr() const;
@@ -163,6 +167,22 @@ namespace quantum_solver_ed{
 	return phi_out;
   }
 
+  template<>
+  void GeneralOp<double>::createDenseMatrix(){
+	if (this->hil_ptr->checkSymmetric() == true)
+	  throw logic_error( "Can't use real GeneralOp with symmetries" );
+	else
+	  GeneralOp<double>::createDenseMatrixNonSym();
+  }
+  
+  template<>
+  void GeneralOp<cx_double>::createDenseMatrix(){
+	if (this->hil_ptr->checkSymmetric() == true)
+	  GeneralOp<cx_double>::createDenseMatrixSym();
+	else
+	  GeneralOp<cx_double>::createDenseMatrixNonSym();
+  }
+
   template<typename T>
   void GeneralOp<T>::createDenseMatrixNonSym(){
 	const HilbertBones* hil_ptr = this->hil_ptr;
@@ -186,6 +206,105 @@ namespace quantum_solver_ed{
 	}
 	if (!this->matrix_dense.is_hermitian(1e-10))
 	  throw logic_error( "In GeneralOp::createDenseMatrixNonSym. Matrix non-hermitian." );
+  }
+
+  template<typename T>
+  void GeneralOp<T>::createDenseMatrixSym(){
+	const HilbertBones* hil_ptr = this->hil_ptr;
+	this->matrix_dense = Mat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates(), fill::zeros);
+	uword dop_len = this->dop_ptr_vec.size();
+	uword oop_len = this->oop_ptr_vec.size();
+	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
+	  Word w(hil_ptr->getConfInt(j_conf));
+	  uword w_rep = w.getRep();
+	  double w_deg_sqrt = sqrt(double(w.getDeg()));
+	  // diagonal elements
+	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
+		this->matrix_dense(j_conf,j_conf) += this->dop_coef_vec[j_dop]
+		  * this->dop_ptr_vec[j_dop]->apply(w_rep);
+	  // off-diagonal elements
+	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
+		pair<uword,T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(w_rep);
+		if (abs(conf_op_pair.second) != 0){
+		  // getting first = rep index for a state (from above), and second = coef
+		  PairUwordT<cx_double> sympair = hil_ptr->getSymPair(conf_op_pair.first);
+		  this->matrix_dense(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
+			* conf_op_pair.second * sympair.second / w_deg_sqrt;
+		}
+	  }
+	}
+	if (!this->matrix_dense.is_hermitian(1e-10))
+	  throw logic_error( "In GeneralOp::createDenseMatrixSym. Matrix non-hermitian." );
+  }
+
+  template<>
+  void GeneralOp<double>::createSparseMatrix(){
+	if (this->hil_ptr->checkSymmetric() == true)
+	  throw logic_error( "Can't use real GeneralOp with symmetries" );
+	else
+	  GeneralOp<double>::createSparseMatrixNonSym();
+  }
+  
+  template<>
+  void GeneralOp<cx_double>::createSparseMatrix(){
+	if (this->hil_ptr->checkSymmetric() == true)
+	  GeneralOp<cx_double>::createSparseMatrixSym();
+	else
+	  GeneralOp<cx_double>::createSparseMatrixNonSym();
+  }
+  
+  template<typename T>
+  void GeneralOp<T>::createSparseMatrixNonSym(){
+	const HilbertBones* hil_ptr = this->hil_ptr;
+	this->matrix_sparse = SpMat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates());
+	uword dop_len = this->dop_ptr_vec.size();
+	uword oop_len = this->oop_ptr_vec.size();
+	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
+	  uword conf_old = hil_ptr->getConfInt(j_conf);
+	  // diagonal elements
+	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
+		this->matrix_dense(j_conf,j_conf) += this->dop_coef_vec[j_dop]
+		  * this->dop_ptr_vec[j_dop]->apply(conf_old);
+	  // off-diagonal elements
+	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
+		PairUwordT<T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(conf_old);
+		if (abs(conf_op_pair.second) != 0){
+		  uword k_conf = hil_ptr->getConfPair(conf_op_pair.first);
+		  this->matrix_sparse(j_conf,k_conf) += this->oop_coef_vec[j_oop] * conf_op_pair.second;
+		}
+	  }
+	}
+	if (!this->matrix_sparse.is_hermitian(1e-10))
+	  throw logic_error( "In GeneralOp::createSparseMatrixNonSym. Matrix non-hermitian." );
+  }
+
+  template<typename T>
+  void GeneralOp<T>::createSparseMatrixSym(){
+	const HilbertBones* hil_ptr = this->hil_ptr;
+	this->matrix_sparse = SpMat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates());
+	uword dop_len = this->dop_ptr_vec.size();
+	uword oop_len = this->oop_ptr_vec.size();
+	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
+	  Word w(hil_ptr->getConfInt(j_conf));
+	  uword w_rep = w.getRep();
+	  double w_deg_sqrt = sqrt(double(w.getDeg()));
+	  // diagonal elements
+	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
+		this->matrix_sparse(j_conf,j_conf) += this->dop_coef_vec[j_dop]
+		  * this->dop_ptr_vec[j_dop]->apply(w_rep);
+	  // off-diagonal elements
+	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
+		pair<uword,T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(w_rep);
+		if (abs(conf_op_pair.second) != 0){
+		  // getting first = rep index for a state (from above), and second = coef
+		  PairUwordT<cx_double> sympair = hil_ptr->getSymPair(conf_op_pair.first);
+		  this->matrix_sparse(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
+			* conf_op_pair.second * sympair.second / w_deg_sqrt;
+		}
+	  }
+	}
+	if (!this->matrix_dense.is_hermitian(1e-10))
+	  throw logic_error( "In GeneralOp::createSparseMatrixSym. Matrix non-hermitian." );
   }
   
   template<typename T>
@@ -228,6 +347,16 @@ namespace quantum_solver_ed{
 	this->eigvals = eigvals;
   }
 
+  template<typename T>
+  const Mat<T>* GeneralOp<T>::getDenseMatrixPtr() const{
+	return &this->matrix_dense;
+  }
+
+  template<typename T>
+  const SpMat<T>* GeneralOp<T>::getSparseMatrixPtr() const{
+	return &this->matrix_sparse;
+  }
+  
   template<typename T>
   Col<double> GeneralOp<T>::getEigvals() const{
 	return this->eigvals;
