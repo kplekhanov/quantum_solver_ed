@@ -22,9 +22,9 @@ int main(int argc, char *argv[]){
   // creating the HS
   cout << "Testing HilSym" << endl;
   timer.tic();
-  HilbertSym hil(localSizes);
+  HilbertSym<cx_double> hil(localSizes);
   for (uword i=0; i<N; i++){
-	Symmetry* sym_ptr = new Symmetry(N);
+	Symmetry<cx_double>* sym_ptr = new Symmetry<cx_double>(N);
 	sym_ptr->setName("t_"+std::to_string(i)+".k_"+std::to_string(k));
 	sym_ptr->setChi(std::exp(2 * pi * i * k * cx_i / double(N)));
 	for (uword j=0; j<N; j++)
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 	hil.addSym(sym_ptr);
   }
   hil.createWithFixedQn(Qn);
-  const HilbertSym* hil_ptr = hil.getHilPtr();
+  const HilbertSym<cx_double>* hil_ptr = hil.getHilPtr();
   cout << "Creating HilSym took " << timer.toc() << endl << endl;
 
   // creating the Hamiltonian
@@ -49,6 +49,7 @@ int main(int argc, char *argv[]){
   timer.tic();
   ham.doLanczosOnFly(100, 1e-14);
   cout << "Testing Lanczos took " << timer.toc() << endl << endl;
+
 
   // testing dense matrix
   cout << "Creating dense matrix" << endl;
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]){
   cout << "Creating sparse matrix took " << timer.toc() << endl << endl;
   const SpMat<cx_double> *ham_sp_mat_ptr;
   ham_sp_mat_ptr = ham.getSparseMatrixPtr();
+
   
   return 0;
 }

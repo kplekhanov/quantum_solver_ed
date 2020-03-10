@@ -11,7 +11,8 @@ namespace quantum_solver_ed{
   // *** ------------------------ *** //
   // ***  Symmetry class          *** //
 
-  class Symmetry: public SymmetryBones{
+  template<typename T=cx_double>
+  class Symmetry: public SymmetryBones<T>{
   public:
 	Symmetry(uword n_sites);
 	uword getNumSites() const;
@@ -19,8 +20,8 @@ namespace quantum_solver_ed{
 	void setName(string new_name);
 	urowvec getPerm() const;
 	void setPerm(const urowvec& other_perm);
-	cx_double getChi() const;
-	void setChi(cx_double new_chi);
+	T getChi() const;
+	void setChi(T new_chi);
 	const uword& operator[](uword pos) const;
 	uword& operator[](uword pos);
 	urowvec apply(const urowvec& conf_vec_in) const;
@@ -28,11 +29,12 @@ namespace quantum_solver_ed{
   private:
 	uword n_sites;
 	urowvec perm;
-	cx_double chi;
+	T chi;
 	string name;
   };
 
-  Symmetry::Symmetry(uword n_sites){
+  template<typename T>
+  Symmetry<T>::Symmetry(uword n_sites){
 	this->n_sites = n_sites;
 	perm = urowvec(n_sites);
 	for (uword i=0; i<n_sites; i++)
@@ -41,51 +43,61 @@ namespace quantum_solver_ed{
 	this->name = "id" + to_string(this->n_sites);
   }
 
+  template<typename T>
   inline
-  uword Symmetry::getNumSites() const{
+  uword Symmetry<T>::getNumSites() const{
 	return this->n_sites;
   }
 
+  template<typename T>
   inline
-  string Symmetry::getName() const{
+  string Symmetry<T>::getName() const{
 	return this->name;
   }
 
+  template<typename T>
   inline
-  void Symmetry::setName(string new_name){
+  void Symmetry<T>::setName(string new_name){
 	this->name = new_name;
   }
 
+  template<typename T>
   inline
-  urowvec Symmetry::getPerm() const{
+  urowvec Symmetry<T>::getPerm() const{
 	return this->perm;
   }
 
+  template<typename T>
   inline
-  void Symmetry::setPerm(const urowvec& other_perm){
+  void Symmetry<T>::setPerm(const urowvec& other_perm){
 	this->perm = other_perm;
   }
 
+  template<typename T>
   inline
-  cx_double Symmetry::getChi() const{
+  T Symmetry<T>::getChi() const{
 	return this->chi;
   }
 
-  void Symmetry::setChi(cx_double new_chi){
+  template<typename T>
+  void Symmetry<T>::setChi(T new_chi){
 	this->chi = new_chi;
   }
 
+  template<typename T>
   inline
-  const uword& Symmetry::operator[](uword pos) const{
+  const uword& Symmetry<T>::operator[](uword pos) const{
 	return this->perm[pos];
   }
 
+  template<typename T>
   inline
-  uword& Symmetry::operator[](uword pos){
+  uword& Symmetry<T>::operator[](uword pos){
 	return this->perm[pos];
   }
 
-  urowvec Symmetry::apply(const urowvec& conf_vec_in) const{
+  template<typename T>
+  urowvec Symmetry<T>::apply(const urowvec& conf_vec_in) const{
 	uword n_sites = conf_vec_in.n_elem;
 	if (n_sites != this->n_sites){
 	  throw logic_error("In Symmetry::apply. Size problem.");
@@ -96,7 +108,8 @@ namespace quantum_solver_ed{
 	return conf_vec_out;
   }
 
-  void Symmetry::print(ostream& os) const{
+  template<typename T>
+  void Symmetry<T>::print(ostream& os) const{
 	os << this->getName() << "|";
 	for (uword i=0; i<this->getNumSites(); i++)
 	  os << " " << (*this)[i];
@@ -109,12 +122,13 @@ namespace quantum_solver_ed{
   // *** ------------------------ *** //
   // ***         Functions        *** //
 
-  Symmetry operator*(const Symmetry& sym1, const Symmetry& sym2){
+  template<typename T>
+  Symmetry<T> operator*(const Symmetry<T>& sym1, const Symmetry<T>& sym2){
 	uword n_sites = sym1.getNumSites();
 	if (n_sites != sym2.getNumSites()){
 	  throw logic_error("In Symmetry::operator+. Size problem.");
 	}
-	Symmetry sym_out(n_sites);
+	Symmetry<T> sym_out(n_sites);
 	sym_out.setName(sym1.getName() + "*" + sym2.getName());
 	sym_out.setChi(sym1.getChi() * sym2.getChi());
 	for (uword i=0; i<n_sites; i++)

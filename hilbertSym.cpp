@@ -10,21 +10,22 @@ namespace quantum_solver_ed{
   using namespace arma;
   using namespace std;
 
+  template <typename T=cx_double>
   class HilbertSym: public HilbertBase{
-	typedef vector<SymmetryBones*> VectorSymPtr;
+	typedef vector<SymmetryBones<T>*> VectorSymPtr;
   public:
 	HilbertSym(const urowvec& localhs_sizes_int);
 	const HilbertSym* getHilPtr() const;
 	bool checkSymmetric() const;
-	void addSym(SymmetryBones* symptr);
+	void addSym(SymmetryBones<T>* symptr);
 	uword getConfInt(uword i) const;
 	uword getConfPair(const uword& confint) const;
-	PairUwordT<cx_double> getSymPair(const uword& confint) const;
+	PairUwordT<T> getSymPair(const uword& confint) const;
 	PairUword getRep(const uword& confint) const;
 	int testRep(const uword& confint) const;
 	void fill(uword index, const uword& confint, HilMap* confint_map_tmp_ptr);
 	void create();
-	void createWithFixedQn(uword qn_tot);
+	void createWithFixedQn(uword qn_tot=0);
 	void print() const;
 	void printSymmetries() const;
   private:
@@ -35,7 +36,8 @@ namespace quantum_solver_ed{
 	HilMap confint_map_left, confint_map_rght;
   };
 
-  HilbertSym::HilbertSym(const urowvec& localhs_sizes_int)
+  template <typename T>
+  HilbertSym<T>::HilbertSym(const urowvec& localhs_sizes_int)
 	:HilbertBase(localhs_sizes_int){
 	this->tot_shift = this->localhs_shifts[this->num_sites - 1];
 	this->half_shift = this->localhs_shifts[this->num_sites / 2];
@@ -43,46 +45,53 @@ namespace quantum_solver_ed{
 	this->mask_rght = ((uword(1) << this->tot_shift) - 1) << this->half_shift;
   }
 
+  template <typename T>
   inline
-  const HilbertSym* HilbertSym::getHilPtr() const{
+  const HilbertSym<T>* HilbertSym<T>::getHilPtr() const{
 	return this;
   }
 
+  template <typename T>
   inline
-  bool HilbertSym::checkSymmetric() const{
+  bool HilbertSym<T>::checkSymmetric() const{
 	return true;
   }
 
+  template <typename T>
   inline
-  void HilbertSym::addSym(SymmetryBones* symptr){
+  void HilbertSym<T>::addSym(SymmetryBones<T>* symptr){
 	this->symptr_vec.push_back(symptr);
   }
 
+  template <typename T>
   inline
-  uword HilbertSym::getConfInt(uword i) const{
+  uword HilbertSym<T>::getConfInt(uword i) const{
 	return this->confint_vec[i];
   }
 
-  uword HilbertSym::getConfPair(const uword& confint) const{
+  template <typename T>
+  uword HilbertSym<T>::getConfPair(const uword& confint) const{
 	uword conf_left = this->mask_left & confint;
 	uword conf_rght = (this->mask_rght & confint) >> this->half_shift;
 	return this->confint_map_left.at(conf_left) + this->confint_map_rght.at(conf_rght);
   }
 
-  PairUwordT<cx_double> HilbertSym::getSymPair(const uword& confint) const{
-	uword index = HilbertSym::getConfPair(confint);
+  template <typename T>
+  PairUwordT<T> HilbertSym<T>::getSymPair(const uword& confint) const{
+	uword index = HilbertSym<T>::getConfPair(confint);
 	Word w(this->rep_lookup_vec[index]);
-	PairUwordT<cx_double> sympair;
+	PairUwordT<T> sympair;
 	sympair.first = w.getRep();
 	sympair.second = sqrt(double(w.getDeg()))
 	  * this->symptr_vec[w.getSym()]->getChi();
 	return sympair;
   }
 
-  PairUword HilbertSym::getRep(const uword& confint) const{
+  template <typename T>
+  PairUword HilbertSym<T>::getRep(const uword& confint) const{
 	uword index_min(0), confint_min(confint);
 	for (uword i=0; i<this->symptr_vec.size(); ++i){
-	  SymmetryBones& sym_ref = *(this->symptr_vec[i]);
+	  SymmetryBones<T>& sym_ref = *(this->symptr_vec[i]);
 	  uword confint_new = this->confVec2confInt(
 												sym_ref.apply(this->confInt2confVec(confint)));
 	  if (confint_new < confint_min){
@@ -93,11 +102,12 @@ namespace quantum_solver_ed{
 	return PairUword(confint_min, index_min);
   }
 
-  int HilbertSym::testRep(const uword& confint) const{
+  template <typename T>
+  int HilbertSym<T>::testRep(const uword& confint) const{
 	int deg = 0;
-	cx_double sum_chi = 0;
+	T sum_chi = 0;
 	for (uword i=0; i<this->symptr_vec.size(); ++i){
-	  SymmetryBones& sym_ref = *(this->symptr_vec[i]);
+	  SymmetryBones<T>& sym_ref = *(this->symptr_vec[i]);
 	  if (this->confVec2confInt(sym_ref.apply(this->confInt2confVec(confint)))
 		  == confint){
 		deg ++;
@@ -110,7 +120,8 @@ namespace quantum_solver_ed{
 	  return deg;
   }
 
-  void HilbertSym::fill(uword index, const uword& confint,
+  template <typename T>
+  void HilbertSym<T>::fill(uword index, const uword& confint,
 						HilMap* confint_map_tmp_ptr){
 	PairUword rep_confpair = this->getRep(confint);
 	int rep_deg_int = this->testRep(rep_confpair.first);
@@ -139,7 +150,8 @@ namespace quantum_solver_ed{
 	}
   }
 
-  void HilbertSym::create(){
+  template <typename T>
+  void HilbertSym<T>::create(){
 	//* creating left and right Hilbert spaces
 	uword ns_left = this->num_sites / 2;
 	uword ns_rght = this->num_sites - ns_left;
@@ -180,15 +192,16 @@ namespace quantum_solver_ed{
 	  conf_rght = conf_rght << this->half_shift;
 	  for(uword il=0; il<hil_left.getNumStates(); ++il){
 		conf_new = hil_left.getConfInt(il) | conf_rght;
-		HilbertSym::fill(index_rght + il, conf_new, &confint_map_tmp);
+		HilbertSym<T>::fill(index_rght + il, conf_new, &confint_map_tmp);
 	  }
 	}
-	this->confint_vec.resize(this->num_states); // updated inside HilbertSym::fill
+	this->confint_vec.resize(this->num_states); // updated inside HilbertSym<T>::fill
 	cout << "Hilbert size. Tot size: " << this->num_states_nonsym << ". "
 		 << "Sym size: " << this->num_states << endl;
   }
 
-  void HilbertSym::createWithFixedQn(uword qn_tot = 0){
+  template <typename T>
+  void HilbertSym<T>::createWithFixedQn(uword qn_tot){
 	//* creating right and left HS's
 	uword ns_left = this->num_sites / 2;
 	uword ns_rght = this->num_sites - ns_left;
@@ -253,18 +266,19 @@ namespace quantum_solver_ed{
 		  for(uword irl=0; irl<inds_left.n_elem; ++irl){
 			index_new = index + irp * inds_left.n_elem + irl;
 			conf_new = hil_left.getConfInt(inds_left[irl]) | conf_rght;
-			HilbertSym::fill(index_new, conf_new, &confint_map_tmp);
+			HilbertSym<T>::fill(index_new, conf_new, &confint_map_tmp);
 		  }
 		}
 		index += inds_rght.n_elem * inds_left.n_elem;
 	  }
 	}
-	this->confint_vec.resize(this->num_states); // updated inside HilbertSym::fill
+	this->confint_vec.resize(this->num_states); // updated inside HilbertSym<T>::fill
 	cout << "Hilbert size. Tot size: " << this->num_states_nonsym << ". "
 		 << "Sym size: " << this->num_states << endl;
   }
 
-  void HilbertSym::print() const{
+  template <typename T>
+  void HilbertSym<T>::print() const{
 	cout << "Printing the Hilbert space" << endl;
 	for(uword i=0; i<this->num_states; ++i){
 	  cout << i << ") ";
@@ -276,7 +290,8 @@ namespace quantum_solver_ed{
 	}
   }
 
-  void HilbertSym::printSymmetries() const{
+  template <typename T>
+  void HilbertSym<T>::printSymmetries() const{
 	cout << "Printing Hilbert space symmetries" << endl;
 	for(uword i=0; i<this->symptr_vec.size(); ++i){
 	  cout << *(this->symptr_vec[i]) << endl;

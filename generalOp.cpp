@@ -1,7 +1,7 @@
 #ifndef GENERAL_OP_H
 #define GENERAL_OP_H
 
-#include "hilbertBones.cpp"
+#include "hilbertSym.cpp"
 #include "elementaryOp.cpp"
 #include "waveFon.cpp"
 #include "word.cpp"
@@ -25,7 +25,7 @@ namespace quantum_solver_ed{
 	WaveFon<T> apply(const WaveFon<T>& phi_in) const;
 	WaveFon<T> applyNonSym(const WaveFon<T>& phi_in) const;
 	WaveFon<T> applySym(const WaveFon<T>& phi_in) const;
-	void doLanczosOnFly(uword N, double err);
+	void doLanczosOnFly(uword N, double err=1e-10);
 	void createDenseMatrix();
 	void createDenseMatrixSym();
 	void createDenseMatrixNonSym();
@@ -70,20 +70,12 @@ namespace quantum_solver_ed{
 	this->oop_coef_vec.push_back(coef);
   }
 
-  template<>
-  WaveFon<double> GeneralOp<double>::apply(const WaveFon<double>& phi_in) const{
+  template<typename T>
+  WaveFon<T> GeneralOp<T>::apply(const WaveFon<T>& phi_in) const{
 	if (this->hil_ptr->checkSymmetric() == true)
-	  throw logic_error( "In GeneralOp::apply. For real problems symmetries can't be used." );
+	  return GeneralOp<T>::applySym(phi_in);
 	else
-	  return GeneralOp<double>::applyNonSym(phi_in);
-  }
-
-  template<>
-  WaveFon<cx_double> GeneralOp<cx_double>::apply(const WaveFon<cx_double>& phi_in) const{
-	if (this->hil_ptr->checkSymmetric() == true)
-	  return GeneralOp<cx_double>::applySym(phi_in);
-	else
-	  return GeneralOp<cx_double>::applyNonSym(phi_in);
+	  return GeneralOp<T>::applyNonSym(phi_in);
   }
 
   template<typename T>
@@ -124,13 +116,14 @@ namespace quantum_solver_ed{
 	}
 	return phi_out;
   }
-
+  
   template<typename T>
   WaveFon<T> GeneralOp<T>::applySym(const WaveFon<T>& phi_in) const{
-	if (phi_in.getHilPtr() != this->hil_ptr){
+	if (phi_in.getHilPtr() != this->hil_ptr)
 	  throw logic_error( "In GeneralOp::apply. Pointer problem." );
-	}
-	const HilbertBones* hil_ptr = this->hil_ptr;
+	const HilbertSym<T>* hil_ptr = dynamic_cast<const HilbertSym<T>*>(this->hil_ptr);
+	if (! hil_ptr)
+	  throw logic_error( "In GeneralOp::apply. HilbertSym problem." );
 	uword num_iters_per_thread = hil_ptr->getNumStates() / OMP_NUM_THREADS;
 	WaveFon<T> phi_out(hil_ptr);
 	uword dop_len = this->dop_ptr_vec.size();
@@ -157,7 +150,7 @@ namespace quantum_solver_ed{
 		pair<uword,T> conf_op_pair = this->oop_ptr_vec[j]->apply(w_rep);
 		if (abs(conf_op_pair.second) != 0){
 		  // getting first = rep index for a state (from above), and second = coef
-		  PairUwordT<cx_double> sympair = hil_ptr->getSymPair(conf_op_pair.first);
+		  PairUwordT<T> sympair = hil_ptr->getSymPair(conf_op_pair.first);
 		  coef_to_add += this->oop_coef_vec[j] * phi_in[sympair.first]
 			* conf_op_pair.second * sympair.second / w_deg_sqrt;
 		}
@@ -166,21 +159,13 @@ namespace quantum_solver_ed{
 	}
 	return phi_out;
   }
-
-  template<>
-  void GeneralOp<double>::createDenseMatrix(){
-	if (this->hil_ptr->checkSymmetric() == true)
-	  throw logic_error( "Can't use real GeneralOp with symmetries" );
-	else
-	  GeneralOp<double>::createDenseMatrixNonSym();
-  }
   
-  template<>
-  void GeneralOp<cx_double>::createDenseMatrix(){
+  template<typename T>
+  void GeneralOp<T>::createDenseMatrix(){
 	if (this->hil_ptr->checkSymmetric() == true)
-	  GeneralOp<cx_double>::createDenseMatrixSym();
+	  GeneralOp<T>::createDenseMatrixSym();
 	else
-	  GeneralOp<cx_double>::createDenseMatrixNonSym();
+	  GeneralOp<T>::createDenseMatrixNonSym();
   }
 
   template<typename T>
@@ -210,7 +195,9 @@ namespace quantum_solver_ed{
 
   template<typename T>
   void GeneralOp<T>::createDenseMatrixSym(){
-	const HilbertBones* hil_ptr = this->hil_ptr;
+	const HilbertSym<T>* hil_ptr = dynamic_cast<const HilbertSym<T>*>(this->hil_ptr);
+	if (! hil_ptr)
+	  throw logic_error( "In GeneralOp::apply. HilbertSym problem." );
 	this->matrix_dense = Mat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates(), fill::zeros);
 	uword dop_len = this->dop_ptr_vec.size();
 	uword oop_len = this->oop_ptr_vec.size();
@@ -227,7 +214,7 @@ namespace quantum_solver_ed{
 		pair<uword,T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(w_rep);
 		if (abs(conf_op_pair.second) != 0){
 		  // getting first = rep index for a state (from above), and second = coef
-		  PairUwordT<cx_double> sympair = hil_ptr->getSymPair(conf_op_pair.first);
+		  PairUwordT<T> sympair = hil_ptr->getSymPair(conf_op_pair.first);
 		  this->matrix_dense(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
 			* conf_op_pair.second * sympair.second / w_deg_sqrt;
 		}
@@ -237,20 +224,12 @@ namespace quantum_solver_ed{
 	  throw logic_error( "In GeneralOp::createDenseMatrixSym. Matrix non-hermitian." );
   }
 
-  template<>
-  void GeneralOp<double>::createSparseMatrix(){
+  template<typename T>
+  void GeneralOp<T>::createSparseMatrix(){
 	if (this->hil_ptr->checkSymmetric() == true)
-	  throw logic_error( "Can't use real GeneralOp with symmetries" );
+	  GeneralOp<T>::createSparseMatrixSym();
 	else
-	  GeneralOp<double>::createSparseMatrixNonSym();
-  }
-  
-  template<>
-  void GeneralOp<cx_double>::createSparseMatrix(){
-	if (this->hil_ptr->checkSymmetric() == true)
-	  GeneralOp<cx_double>::createSparseMatrixSym();
-	else
-	  GeneralOp<cx_double>::createSparseMatrixNonSym();
+	  GeneralOp<T>::createSparseMatrixNonSym();
   }
   
   template<typename T>
@@ -280,7 +259,9 @@ namespace quantum_solver_ed{
 
   template<typename T>
   void GeneralOp<T>::createSparseMatrixSym(){
-	const HilbertBones* hil_ptr = this->hil_ptr;
+	const HilbertSym<T>* hil_ptr = dynamic_cast<const HilbertSym<T>*>(this->hil_ptr);
+	if (! hil_ptr)
+	  throw logic_error( "In GeneralOp::apply. HilbertSym problem." );
 	this->matrix_sparse = SpMat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates());
 	uword dop_len = this->dop_ptr_vec.size();
 	uword oop_len = this->oop_ptr_vec.size();
@@ -297,7 +278,7 @@ namespace quantum_solver_ed{
 		pair<uword,T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(w_rep);
 		if (abs(conf_op_pair.second) != 0){
 		  // getting first = rep index for a state (from above), and second = coef
-		  PairUwordT<cx_double> sympair = hil_ptr->getSymPair(conf_op_pair.first);
+		  PairUwordT<T> sympair = hil_ptr->getSymPair(conf_op_pair.first);
 		  this->matrix_sparse(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
 			* conf_op_pair.second * sympair.second / w_deg_sqrt;
 		}
@@ -306,7 +287,7 @@ namespace quantum_solver_ed{
 	if (!this->matrix_dense.is_hermitian(1e-10))
 	  throw logic_error( "In GeneralOp::createSparseMatrixSym. Matrix non-hermitian." );
   }
-  
+
   template<typename T>
   void GeneralOp<T>::doLanczosOnFly(uword N, double err){
 	Mat<T> tridiag = Mat<T>(N, N, fill::zeros);

@@ -61,6 +61,6 @@ int main(int argc, char *argv[]){
   //
   vec eigval = eigs_sym(*ham_sp_mat_ptr, 10);
   cout << eigval;
-    
+
   return 0;
 }

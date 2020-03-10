@@ -15,7 +15,7 @@ namespace quantum_solver_ed{
 	uword getConfInt(uword i) const;
 	uword getConfPair(const uword& confint) const;
 	void create();
-	void createWithFixedQn(uword qn_tot);
+	void createWithFixedQn(uword qn_tot=0);
 	void print() const;
   protected:
 	uvec confint_vec;
@@ -74,7 +74,7 @@ namespace quantum_solver_ed{
 	}
   }
 
-  void HilbertBrut::createWithFixedQn(uword qn_tot=0){
+  void HilbertBrut::createWithFixedQn(uword qn_tot){
 	//* creating right and left HS's
 	uword ns_left = this->num_sites / 2;
 	uword ns_rght = this->num_sites - ns_left;

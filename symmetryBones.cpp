@@ -11,21 +11,23 @@ namespace quantum_solver_ed{
   // *** ------------------------ *** //
   // ***  SymmetryBones class     *** //
 
+  template<typename T=cx_double>
   class SymmetryBones{
   public:
 	SymmetryBones();
 	virtual string getName() const = 0;
 	virtual void setName(string new_name) = 0;
-	virtual cx_double getChi() const = 0;
-	virtual void setChi(cx_double new_chi) = 0;
+	virtual T getChi() const = 0;
+	virtual void setChi(T new_chi) = 0;
 	virtual urowvec apply(const urowvec& conf_vec_in) const = 0;
 	virtual void print(ostream& os) const = 0;
   private:
-	cx_double chi;
+	T chi;
 	string name;
   };
 
-  SymmetryBones::SymmetryBones(){}
+  template<typename T>
+  SymmetryBones<T>::SymmetryBones(){}
 
 
   // *** ------------------------ *** //
@@ -34,7 +36,8 @@ namespace quantum_solver_ed{
   // *** ------------------------ *** //
   // ***         Functions        *** //
 
-  ostream& operator<<(ostream& os, const SymmetryBones& sym){
+  template<typename T>
+  ostream& operator<<(ostream& os, const SymmetryBones<T>& sym){
 	sym.print(os);
 	return os;
   }
