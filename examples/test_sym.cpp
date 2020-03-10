@@ -1,9 +1,8 @@
-#include "../quantum_solver_ed/hilbertSym.cpp"
-#include "../quantum_solver_ed/waveFon.cpp"
-#include "../quantum_solver_ed/symmetry.cpp"
-#include "../quantum_solver_ed/generalOp.cpp"
-//#include "../quantum_solver_ed/opHardCoreBose.cpp"
-#include "../quantum_solver_ed/opBoseHubbard.cpp"
+#include "../hilbertSym.cpp"
+#include "../waveFon.cpp"
+#include "../symmetry.cpp"
+#include "../generalOp.cpp"
+#include "../opBoseHubbard.cpp"
 
 
 using namespace quantum_solver_ed;
