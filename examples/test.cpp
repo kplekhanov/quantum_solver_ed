@@ -1,0 +1,67 @@
+#include "../quantum_solver_ed/hilbert.cpp"
+#include "../quantum_solver_ed/waveFon.cpp"
+#include "../quantum_solver_ed/generalOp.cpp"
+//#include "../quantum_solver_ed/opHardCoreBose.cpp"
+#include "../quantum_solver_ed/opBoseHubbard.cpp"
+
+
+using namespace quantum_solver_ed;
+using namespace arma;
+using namespace std;
+
+int main(int argc, char *argv[]){
+  // variables
+  const double pi = std::acos(-1);
+  uword N = 16;
+  uword Qn = 8;
+  wall_clock timer;
+  urowvec localSizes = urowvec(N, fill::ones)*2;
+  double k = 0; // wave-vector number
+
+  // creating the HS
+  cout << "Testing Hil" << endl;
+  timer.tic();
+  Hilbert hil(localSizes);
+  hil.createWithFixedQn(Qn);
+  const Hilbert* hil_ptr = hil.getHilPtr();
+  cout << "Creating Hil took " << timer.toc() << endl << endl;
+
+  // creating the Hamiltonian
+  GeneralOp<double> ham(hil_ptr);
+  for (uword i=0; i<N; i++){
+	ham.append(new Ni(hil_ptr, i), 0.123);
+	ham.append(new BdagiBj<double>(hil_ptr, i, (i+1)%N), -1.0);
+	ham.append(new BdagiBj<double>(hil_ptr, (i+1)%N, i), -1.0);
+  }
+
+  // testing Lanczos
+  cout << "Testing Lanczos" << endl;
+  cout.precision(8);
+  timer.tic();
+  ham.doLanczosOnFly(100, 1e-14);
+  cout << "Testing Lanczos took " << timer.toc() << endl << endl;
+
+  // testing dense matrix
+  cout << "Creating dense matrix" << endl;
+  cout.precision(8);
+  timer.tic();
+  ham.createDenseMatrix();
+  cout << "Creating dense matrix took " << timer.toc() << endl << endl;
+  const Mat<double> *ham_mat_ptr;
+  ham_mat_ptr = ham.getDenseMatrixPtr();
+
+  // testing sparse matrix
+  cout << "Creating sparse matrix" << endl;
+  cout.precision(8);
+  timer.tic();
+  ham.createSparseMatrix();
+  cout << "Creating sparse matrix took " << timer.toc() << endl << endl;
+  const SpMat<double> *ham_sp_mat_ptr;
+  ham_sp_mat_ptr = ham.getSparseMatrixPtr();
+
+  //
+  vec eigval = eigs_sym(*ham_sp_mat_ptr, 10);
+  cout << eigval;
+    
+  return 0;
+}
