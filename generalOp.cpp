@@ -23,28 +23,24 @@ namespace quantum_solver_ed{
 	void append(DiagOp* dop_ptr, double coef);
 	void append(OffDiagOp<T>* oop_ptr, T coef);
 	WaveFon<T> apply(const WaveFon<T>& phi_in) const;
-	WaveFon<T> applyNonSym(const WaveFon<T>& phi_in) const;
-	WaveFon<T> applySym(const WaveFon<T>& phi_in) const;
 	void doLanczosOnFly(uword N, double err=1e-10);
-	void createDenseMatrix();
-	void createDenseMatrixSym();
-	void createDenseMatrixNonSym();
-	void createSparseMatrix();
-	void createSparseMatrixSym();
-	void createSparseMatrixNonSym();
-	const Mat<T>* getDenseMatrixPtr() const;
-	const SpMat<T>* getSparseMatrixPtr() const;
+	template<typename Q>
+	void createMatrix(Q* matrix_ptr);
 	Col<double> getEigvals() const;
-	void print(int option=0) const;
+	void print() const;
   private:
 	const HilbertBones* hil_ptr;
 	VectorDiagOpPtr dop_ptr_vec;
 	VectorOffDiagOpPtr oop_ptr_vec;
 	vector<double> dop_coef_vec;
 	vector<T> oop_coef_vec;
-	Mat<T> matrix_dense;
-	SpMat<T> matrix_sparse;
 	Col<double> eigvals;
+	WaveFon<T> applyNonSym(const WaveFon<T>& phi_in) const;
+	WaveFon<T> applySym(const WaveFon<T>& phi_in) const;
+	template<typename Q>
+	void createMatrixNonSym(Q* matrix_ptr);
+	template<typename Q>
+	void createMatrixSym(Q* matrix_ptr);
   };
 
   template<typename T>
@@ -159,110 +155,57 @@ namespace quantum_solver_ed{
 	}
 	return phi_out;
   }
-  
+
   template<typename T>
-  void GeneralOp<T>::createDenseMatrix(){
-	if (this->hil_ptr->checkSymmetric() == true)
-	  GeneralOp<T>::createDenseMatrixSym();
+  template<typename Q>
+  void GeneralOp<T>::createMatrix(Q* matrix_ptr){
+	if (is_same<Q, Mat<T>>::value){
+	  Mat<T> mat(this->hil_ptr->getNumStates(), this->hil_ptr->getNumStates(), fill::zeros);
+	  *matrix_ptr = mat;
+	}
+	else if (is_same<Q, SpMat<T>>::value){
+	  SpMat<T> mat(this->hil_ptr->getNumStates(), this->hil_ptr->getNumStates());
+	  *matrix_ptr = mat;
+	}
 	else
-	  GeneralOp<T>::createDenseMatrixNonSym();
+	  throw logic_error( "In GeneralOp::createMatrx. Matrix type is unknown." );
+  	if (this->hil_ptr->checkSymmetric() == true)
+	  this->createMatrixSym<Q>(matrix_ptr);
+	else
+	  this->createMatrixNonSym<Q>(matrix_ptr);
   }
 
   template<typename T>
-  void GeneralOp<T>::createDenseMatrixNonSym(){
+  template<typename Q>
+  void GeneralOp<T>::createMatrixNonSym(Q* matrix_ptr){
 	const HilbertBones* hil_ptr = this->hil_ptr;
-	this->matrix_dense = Mat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates(), fill::zeros);
 	uword dop_len = this->dop_ptr_vec.size();
 	uword oop_len = this->oop_ptr_vec.size();
 	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
 	  uword conf_old = hil_ptr->getConfInt(j_conf);
 	  // diagonal elements
 	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
-		this->matrix_dense(j_conf,j_conf) += this->dop_coef_vec[j_dop]
+		(*matrix_ptr)(j_conf,j_conf) += this->dop_coef_vec[j_dop]
 		  * this->dop_ptr_vec[j_dop]->apply(conf_old);
 	  // off-diagonal elements
 	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
 		PairUwordT<T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(conf_old);
 		if (abs(conf_op_pair.second) != 0){
 		  uword k_conf = hil_ptr->getConfPair(conf_op_pair.first);
-		  this->matrix_dense(j_conf,k_conf) += this->oop_coef_vec[j_oop] * conf_op_pair.second;
+		  (*matrix_ptr)(j_conf,k_conf) += this->oop_coef_vec[j_oop] * conf_op_pair.second;
 		}
 	  }
 	}
-	if (!this->matrix_dense.is_hermitian(1e-10))
+	if (!(*matrix_ptr).is_hermitian(1e-10))
 	  throw logic_error( "In GeneralOp::createDenseMatrixNonSym. Matrix non-hermitian." );
   }
-
-  template<typename T>
-  void GeneralOp<T>::createDenseMatrixSym(){
-	const HilbertSym<T>* hil_ptr = dynamic_cast<const HilbertSym<T>*>(this->hil_ptr);
-	if (! hil_ptr)
-	  throw logic_error( "In GeneralOp::apply. HilbertSym problem." );
-	this->matrix_dense = Mat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates(), fill::zeros);
-	uword dop_len = this->dop_ptr_vec.size();
-	uword oop_len = this->oop_ptr_vec.size();
-	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
-	  Word w(hil_ptr->getConfInt(j_conf));
-	  uword w_rep = w.getRep();
-	  double w_deg_sqrt = sqrt(double(w.getDeg()));
-	  // diagonal elements
-	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
-		this->matrix_dense(j_conf,j_conf) += this->dop_coef_vec[j_dop]
-		  * this->dop_ptr_vec[j_dop]->apply(w_rep);
-	  // off-diagonal elements
-	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
-		pair<uword,T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(w_rep);
-		if (abs(conf_op_pair.second) != 0){
-		  // getting first = rep index for a state (from above), and second = coef
-		  PairUwordT<T> sympair = hil_ptr->getSymPair(conf_op_pair.first);
-		  this->matrix_dense(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
-			* conf_op_pair.second * sympair.second / w_deg_sqrt;
-		}
-	  }
-	}
-	if (!this->matrix_dense.is_hermitian(1e-10))
-	  throw logic_error( "In GeneralOp::createDenseMatrixSym. Matrix non-hermitian." );
-  }
-
-  template<typename T>
-  void GeneralOp<T>::createSparseMatrix(){
-	if (this->hil_ptr->checkSymmetric() == true)
-	  GeneralOp<T>::createSparseMatrixSym();
-	else
-	  GeneralOp<T>::createSparseMatrixNonSym();
-  }
   
   template<typename T>
-  void GeneralOp<T>::createSparseMatrixNonSym(){
-	const HilbertBones* hil_ptr = this->hil_ptr;
-	this->matrix_sparse = SpMat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates());
-	uword dop_len = this->dop_ptr_vec.size();
-	uword oop_len = this->oop_ptr_vec.size();
-	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
-	  uword conf_old = hil_ptr->getConfInt(j_conf);
-	  // diagonal elements
-	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
-		this->matrix_dense(j_conf,j_conf) += this->dop_coef_vec[j_dop]
-		  * this->dop_ptr_vec[j_dop]->apply(conf_old);
-	  // off-diagonal elements
-	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
-		PairUwordT<T> conf_op_pair = this->oop_ptr_vec[j_oop]->apply(conf_old);
-		if (abs(conf_op_pair.second) != 0){
-		  uword k_conf = hil_ptr->getConfPair(conf_op_pair.first);
-		  this->matrix_sparse(j_conf,k_conf) += this->oop_coef_vec[j_oop] * conf_op_pair.second;
-		}
-	  }
-	}
-	if (!this->matrix_sparse.is_hermitian(1e-10))
-	  throw logic_error( "In GeneralOp::createSparseMatrixNonSym. Matrix non-hermitian." );
-  }
-
-  template<typename T>
-  void GeneralOp<T>::createSparseMatrixSym(){
+  template<typename Q>
+  void GeneralOp<T>::createMatrixSym(Q* matrix_ptr){
 	const HilbertSym<T>* hil_ptr = dynamic_cast<const HilbertSym<T>*>(this->hil_ptr);
-	if (! hil_ptr)
+	if (!hil_ptr)
 	  throw logic_error( "In GeneralOp::apply. HilbertSym problem." );
-	this->matrix_sparse = SpMat<T>(hil_ptr->getNumStates(), hil_ptr->getNumStates());
 	uword dop_len = this->dop_ptr_vec.size();
 	uword oop_len = this->oop_ptr_vec.size();
 	for (uword j_conf=0; j_conf<hil_ptr->getNumStates(); ++j_conf){
@@ -271,7 +214,7 @@ namespace quantum_solver_ed{
 	  double w_deg_sqrt = sqrt(double(w.getDeg()));
 	  // diagonal elements
 	  for (uword j_dop=0; j_dop<dop_len; ++j_dop)
-		this->matrix_sparse(j_conf,j_conf) += this->dop_coef_vec[j_dop]
+		(*matrix_ptr)(j_conf,j_conf) += this->dop_coef_vec[j_dop]
 		  * this->dop_ptr_vec[j_dop]->apply(w_rep);
 	  // off-diagonal elements
 	  for (uword j_oop=0; j_oop<oop_len; ++j_oop){
@@ -279,13 +222,13 @@ namespace quantum_solver_ed{
 		if (abs(conf_op_pair.second) != 0){
 		  // getting first = rep index for a state (from above), and second = coef
 		  PairUwordT<T> sympair = hil_ptr->getSymPair(conf_op_pair.first);
-		  this->matrix_sparse(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
+		  (*matrix_ptr)(j_conf,sympair.first) += this->oop_coef_vec[j_oop]
 			* conf_op_pair.second * sympair.second / w_deg_sqrt;
 		}
 	  }
 	}
-	if (!this->matrix_dense.is_hermitian(1e-10))
-	  throw logic_error( "In GeneralOp::createSparseMatrixSym. Matrix non-hermitian." );
+	if (!(*matrix_ptr).is_hermitian(1e-10))
+	  throw logic_error( "In GeneralOp::createDenseMatrixSym. Matrix non-hermitian." );
   }
 
   template<typename T>
@@ -327,16 +270,6 @@ namespace quantum_solver_ed{
 	}
 	this->eigvals = eigvals;
   }
-
-  template<typename T>
-  const Mat<T>* GeneralOp<T>::getDenseMatrixPtr() const{
-	return &this->matrix_dense;
-  }
-
-  template<typename T>
-  const SpMat<T>* GeneralOp<T>::getSparseMatrixPtr() const{
-	return &this->matrix_sparse;
-  }
   
   template<typename T>
   Col<double> GeneralOp<T>::getEigvals() const{
@@ -344,29 +277,21 @@ namespace quantum_solver_ed{
   }
 
   template<typename T>
-  void GeneralOp<T>::print(int option) const{
-	switch (option)
-	  {
-	  case 1: cout << this->matrix_dense; break;
-	  case 2: cout << this->matrix_sparse; break;
-	  default: {
-		uword dop_len = this->dop_ptr_vec.size();
-		cout << "Diagonal operators: ";
-		for (uword i=0; i<dop_len; i++){
-		  cout << "(" << this->dop_coef_vec[i]  << ") * " << *(this->dop_ptr_vec[i]);
-		  if (i != dop_len-1) cout << " + ";
-		}
-		cout << endl;
-		uword oop_len = this->oop_ptr_vec.size();
-		cout << "Off-diagonal operators: ";
-		for (uword i=0; i<oop_len; i++){
-		  cout << "(" << this->oop_coef_vec[i]  << ") * " << *(this->oop_ptr_vec[i]);
-		  if (i != oop_len-1) cout << " + ";
-		}
-		cout << endl;
-		break;
-	  }
-	  }
+  void GeneralOp<T>::print() const{
+	uword dop_len = this->dop_ptr_vec.size();
+	cout << "Diagonal operators: ";
+	for (uword i=0; i<dop_len; i++){
+	  cout << "(" << this->dop_coef_vec[i]  << ") * " << *(this->dop_ptr_vec[i]);
+	  if (i != dop_len-1) cout << " + ";
+	}
+	cout << endl;
+	uword oop_len = this->oop_ptr_vec.size();
+	cout << "Off-diagonal operators: ";
+	for (uword i=0; i<oop_len; i++){
+	  cout << "(" << this->oop_coef_vec[i]  << ") * " << *(this->oop_ptr_vec[i]);
+	  if (i != oop_len-1) cout << " + ";
+	}
+	cout << endl;
   }
 
   // *** ---------------- *** //

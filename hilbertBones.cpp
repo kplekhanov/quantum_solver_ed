@@ -35,23 +35,11 @@ namespace quantum_solver_ed{
 	// some functions to get index -> confint and vice versa
 	virtual uword getConfInt(uword i) const = 0;
 	virtual uword getConfPair(const uword& confint) const = 0;
-  
-	// ugly -- for HilbertSym, function which should return (confint, cx_double)
-	// or (confint, double)
-	//virtual PairUwordT<double> getSymPair(const uword& confint) const;
-	//virtual PairUwordT<cx_double> getSymPair(const uword& confint) const;
   protected:
 	uword num_states, num_sites;
   };
 
   HilbertBones::HilbertBones(){}
-
-  //PairUwordT<cx_double> HilbertBones::getSymPair(const uword& confint) const
-  //{
-  //throw logic_error("In HilbertBones::getSymPair."
-  //					   "It should be used only for symmetric HS's");
-  //return PairUwordT<cx_double>(0,0);
-  //}
 
 } //* namespace quantum_solver_ed
 
