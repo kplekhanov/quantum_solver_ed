@@ -1,17 +1,18 @@
 #ifndef HEADERS_H
 #define HEADERS_H
 
+#define OMP_NUM_THREADS 32
 #define SP << " " <<
-#define OMP_NUM_THREADS std::max(atoi(std::getenv("MKL_NUM_THREADS")), 1)
 
 #include <armadillo>
 #include <stdexcept>
 #include <iostream>
-#include <string> 
+#include <string>
+#include <sstream> // stringstream
 #include <unordered_map>
 #include <vector>
 #include <math.h>
-#include <omp.h>
+#include <omp.h> // a priori not needed since using only pragma
 
 
 namespace quantum_solver_ed{

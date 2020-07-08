@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
 
   //
   cx_vec eigval = eigs_gen(ham_sp_mat_2, 2);
-  cout << eigval;
+  cout << "Energy " << eigval;
   
   return 0;
 }

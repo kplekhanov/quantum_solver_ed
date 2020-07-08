@@ -278,6 +278,7 @@ namespace quantum_solver_ed{
 
   template<typename T>
   void GeneralOp<T>::print() const{
+	cout << "Printing GeneralOp" << endl;
 	uword dop_len = this->dop_ptr_vec.size();
 	cout << "Diagonal operators: ";
 	for (uword i=0; i<dop_len; i++){
