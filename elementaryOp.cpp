@@ -52,6 +52,21 @@ namespace quantum_solver_ed{
 	virtual PairUwordT<T> apply(const uword& conf_in) const = 0;
   };
 
+  // *** function which fills a vector of ElementartOps from a file
+  void fillElementaryOps(vector<ElementaryOp*> eop_ptr_vec, string file_name){
+	ifstream file(file_name);
+	string line;
+	while (getline(file, line)){
+	  stringstream ss(line);
+	  string line_value;
+	  vector<string> line_values;
+	  while(getline(ss, line_value, ',')){
+		line_values.push_back(line_value);
+		cout << line_value << endl;
+	  }
+	}
+  } 
+
   // *** ---------------- *** //
 
 } //* namespace quantum_solver_ed

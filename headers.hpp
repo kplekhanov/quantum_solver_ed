@@ -2,7 +2,6 @@
 #define HEADERS_H
 
 #define OMP_NUM_THREADS 32
-#define SP << " " <<
 
 #include <armadillo>
 #include <stdexcept>
