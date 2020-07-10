@@ -113,6 +113,80 @@ namespace quantum_solver_ed{
 	  return PairUwordT<T>(0 , 0);
   }
 
+
+  // *** in-plane DM interactions -- Sp
+  template<typename T=double>
+  class SziSpj: public OffDiagOp<T>{
+  public:
+	SziSpj(){};
+	SziSpj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	PairUwordT<T> apply(const uword& conf_in) const;
+  private:
+	uword i, j;
+  };
+
+  template<typename T>
+  SziSpj<T>::SziSpj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  template<typename T>
+  void SziSpj<T>::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In SziSpj::fill. Vector of indices should have size 2." );
+	}
+	this->hil_ptr = hil_ptr;
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Sz_" + to_string(this->i) + ".Sp_" + to_string(this->j);
+  }
+
+  template<typename T>
+  PairUwordT<T> SziSpj<T>::apply(const uword& conf_in) const{
+	if ( ((conf_in >> j) & 1) == 0 )
+	  return PairUwordT<T>(conf_in | (1 << j), double((conf_in >> i) & 1) - 0.5);
+	else
+	  return PairUwordT<T>(0 , 0);
+  }
+
+  
+  // *** in-plane DM interactions -- Sm
+  template<typename T=double>
+  class SziSmj: public OffDiagOp<T>{
+  public:
+	SziSmj(){};
+	SziSmj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	PairUwordT<T> apply(const uword& conf_in) const;
+  private:
+	uword i, j;
+  };
+
+  template<typename T>
+  SziSmj<T>::SziSmj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  template<typename T>
+  void SziSmj<T>::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In SziSmj::fill. Vector of indices should have size 2." );
+	}
+	this->hil_ptr = hil_ptr;
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Sz_" + to_string(this->i) + ".Sm_" + to_string(this->j);
+  }
+
+  template<typename T>
+  PairUwordT<T> SziSmj<T>::apply(const uword& conf_in) const{
+	if ( ((conf_in >> j) & 1) == 1 )
+	  return PairUwordT<T>(conf_in & ~(1 << j), double((conf_in >> i) & 1) - 0.5);
+	else
+	  return PairUwordT<T>(0 , 0);
+  }
+
   // *** ------------------ *** //
 
 } //* namespace quantum_solver_ed
