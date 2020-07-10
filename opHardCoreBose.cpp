@@ -14,16 +14,25 @@ namespace quantum_solver_ed{
   // *** chemical potential
   class Ni: public DiagOp{
   public:
-	Ni(const HilbertBones* hil_ptr, uword i);
+	Ni(){};
+	Ni(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
 	double apply(const uword& conf_in) const;
   private:
 	uword i;
   };
 
-  Ni::Ni(const HilbertBones* hil_ptr, uword i){
+  Ni::Ni(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  void Ni::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 1){
+	  throw logic_error( "In Ni::fill. Vector of indices should have size 1." );
+	}
 	this->hil_ptr = hil_ptr;
-	this->i = i;
-	this->name = "N_" + to_string(i);
+	this->i = indices_int.at(0);
+	this->name = "N_" + to_string(this->i);
   }
 
   inline
@@ -41,18 +50,28 @@ namespace quantum_solver_ed{
   template<typename T=double>
   class BdagiBj: public OffDiagOp<T>{
   public:
-	BdagiBj(const HilbertBones* hil_ptr, uword i, uword j);
+	BdagiBj(){};
+	BdagiBj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
 	PairUwordT<T> apply(const uword& conf_in) const;
   private:
 	uword i, j;
   };
 
   template<typename T>
-  BdagiBj<T>::BdagiBj(const HilbertBones* hil_ptr, uword i, uword j){
+  BdagiBj<T>::BdagiBj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  template<typename T>
+  void BdagiBj<T>::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In BdagiBj::fill. Vector of indices should have size 2." );
+	}
 	this->hil_ptr = hil_ptr;
-	this->i = i;
-	this->j = j;
-	this->name = "Bdag_" + to_string(i) + ".B_" + to_string(j);
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Bdag_" + to_string(this->i) + ".B_" + to_string(this->j);
   }
 
   template<typename T>

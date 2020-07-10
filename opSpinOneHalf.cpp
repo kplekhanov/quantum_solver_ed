@@ -14,16 +14,25 @@ namespace quantum_solver_ed{
   // *** Zeeman along the z-axis
   class Szi: public DiagOp{
   public:
-	Szi(const HilbertBones* hil_ptr, uword i);
+	Szi(){};
+	Szi(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
 	double apply(const uword& conf_in) const;
   private:
 	uword i;
   };
 
-  Szi::Szi(const HilbertBones* hil_ptr, uword i){
+  Szi::Szi(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  void Szi::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 1){
+	  throw logic_error( "In Szi::fill. Vector of indices should have size 1." );
+	}
 	this->hil_ptr = hil_ptr;
-	this->i = i;
-	this->name = "Sz_" + to_string(i);
+	this->i = indices_int.at(0);
+	this->name = "Sz_" + to_string(this->i);
   }
 
   inline
@@ -34,18 +43,27 @@ namespace quantum_solver_ed{
   // *** Exchange along the z-axis
   class SziSzj: public DiagOp{
   public:
-	SziSzj(const HilbertBones* hil_ptr, uword i, uword j);
+	SziSzj(){};
+	SziSzj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
 	double apply(const uword& conf_in) const;
   private:
 	uword i;
 	uword j;
   };
 
-  SziSzj::SziSzj(const HilbertBones* hil_ptr, uword i, uword j){
+  SziSzj::SziSzj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  void SziSzj::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In SziSzj::fill. Vector of indices should have size 2." );
+	}
 	this->hil_ptr = hil_ptr;
-	this->i = i;
-	this->j = j;
-	this->name = "Sz_" + to_string(i) + "Sz_" + to_string(j);
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Sz_" + to_string(this->i) + ".Sz_" + to_string(this->j);
   }
 
   inline
@@ -59,22 +77,32 @@ namespace quantum_solver_ed{
   // *** ------------------ *** //
   // *** off-diagonal terms *** //
 
-  // *** sweep gates
+  // *** swap gates
   template<typename T=double>
   class SpiSmj: public OffDiagOp<T>{
   public:
-	SpiSmj(const HilbertBones* hil_ptr, uword i, uword j);
+	SpiSmj(){};
+	SpiSmj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
 	PairUwordT<T> apply(const uword& conf_in) const;
   private:
 	uword i, j;
   };
 
   template<typename T>
-  SpiSmj<T>::SpiSmj(const HilbertBones* hil_ptr, uword i, uword j){
+  SpiSmj<T>::SpiSmj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  template<typename T>
+  void SpiSmj<T>::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In SpiSmj::fill. Vector of indices should have size 2." );
+	}
 	this->hil_ptr = hil_ptr;
-	this->i = i;
-	this->j = j;
-	this->name = "Sp_" + to_string(i) + ".Sm_" + to_string(j);
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Sp_" + to_string(this->i) + ".Sm_" + to_string(this->j);
   }
 
   template<typename T>

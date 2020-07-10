@@ -43,7 +43,6 @@ int main(int argc, char *argv[]){
 	ham.append(new BdagiBj<cx_double>(hil_ptr, i, (i+1)%N), -1.0);
 	ham.append(new BdagiBj<cx_double>(hil_ptr, (i+1)%N, i), -1.0);
   }
-
   ham.print();
 
   // testing Lanczos

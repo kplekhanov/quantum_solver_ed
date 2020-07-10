@@ -31,7 +31,6 @@ int main(int argc, char *argv[]){
 	ham.append(new SpiSmj<double>(hil_ptr, i, (i+1)%N), -1.0);
 	ham.append(new SpiSmj<double>(hil_ptr, (i+1)%N, i), -1.0);
   }
-
   ham.print();
 
   // testing Lanczos

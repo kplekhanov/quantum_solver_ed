@@ -21,6 +21,7 @@ namespace quantum_solver_ed{
   public:
 	GeneralOp(const HilbertBones* hil_ptr);
 	void append(DiagOp* dop_ptr, double coef);
+	void append(DiagOp* dop_ptr, cx_double coef);
 	void append(OffDiagOp<T>* oop_ptr, T coef);
 	WaveFon<T> apply(const WaveFon<T>& phi_in) const;
 	void doLanczosOnFly(uword N, double err=1e-10);
@@ -28,6 +29,8 @@ namespace quantum_solver_ed{
 	void createMatrix(Q* matrix_ptr);
 	Col<double> getEigvals() const;
 	void print() const;
+	template <typename S>
+	void readFromFile(string file_name, char delimiter=';');
   private:
 	const HilbertBones* hil_ptr;
 	VectorDiagOpPtr dop_ptr_vec;
@@ -55,6 +58,16 @@ namespace quantum_solver_ed{
 	}
 	this->dop_ptr_vec.push_back(dop_ptr);
 	this->dop_coef_vec.push_back(coef);
+  }
+
+  template<typename T>
+  void GeneralOp<T>::append(DiagOp* dop_ptr, cx_double coef){
+	// if coef is complex, take the real part only
+	if (dop_ptr->getHilPtr() != this->hil_ptr){
+	  throw logic_error( "In GeneralOp::append. Pointer problem." );
+	}
+	this->dop_ptr_vec.push_back(dop_ptr);
+	this->dop_coef_vec.push_back(coef.real());
   }
 
   template<typename T>
@@ -293,6 +306,35 @@ namespace quantum_solver_ed{
 	  if (i != oop_len-1) cout << " + ";
 	}
 	cout << endl;
+  }
+
+  // *** function which fills a vector of ElementartOps from a file
+  // *** here S is the template for different ElementaryOps
+  // *** S has to have a constructor which takes no parameters
+  template<typename T>
+  template<typename S>
+  void GeneralOp<T>::readFromFile(string file_name, char delimiter){
+	ifstream file(file_name);
+	string line;
+	while (getline(file, line)){
+	  stringstream ss(line);
+	  string line_value;
+	  vector<string> line_values;
+	  while(getline(ss, line_value, delimiter)){
+		line_values.push_back(line_value);
+	  }
+	  vector<string> indices_str(vector<string>(line_values.begin(), line_values.end()-1));
+	  vector<uword> indices_int;
+	  for (uword i=0; i< indices_str.size(); i++){
+		indices_int.push_back(atoi(indices_str.at(i).c_str()));
+	  }
+	  S* s_ptr = new S();
+	  s_ptr->fill(this->hil_ptr, indices_int);
+	  istringstream amplitude_iss(line_values.back());
+	  T amplitude_val;
+	  amplitude_iss >> amplitude_val;
+	  this->append(s_ptr, amplitude_val);
+	}
   }
 
   // *** ---------------- *** //

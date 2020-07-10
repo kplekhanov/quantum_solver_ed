@@ -15,13 +15,15 @@ namespace quantum_solver_ed{
   // *** base class for polymorphism
   class ElementaryOp{
   public:
+	ElementaryOp(){};
 	const HilbertBones* getHilPtr() const;
 	void print(ostream& os) const;
+	virtual void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
   protected:
 	const HilbertBones* hil_ptr;
 	string name;
   };
-
+  
   inline
   const HilbertBones* ElementaryOp::getHilPtr() const{
 	return this->hil_ptr;
@@ -29,6 +31,16 @@ namespace quantum_solver_ed{
 
   void ElementaryOp::print(ostream& os) const{
 	os << this->name;
+  }
+
+  void ElementaryOp::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->hil_ptr = hil_ptr;
+	cout << "Warning: filling is not implemented for this operator" << endl;
+	cout << "Reading indices: ";
+	for (auto i=indices_int.begin(); i<indices_int.end(); i++){
+	  cout << *i << " ";
+	}
+	cout << endl;
   }
 
   inline
@@ -41,6 +53,7 @@ namespace quantum_solver_ed{
   // *** diagonal operators (return coef when applied)
   class DiagOp: public ElementaryOp{
   public:
+	DiagOp(){};
 	virtual double apply(const uword& conf_in) const = 0;
   };
 
@@ -49,23 +62,9 @@ namespace quantum_solver_ed{
   template<typename T>
   class OffDiagOp: public ElementaryOp{
   public:
+	OffDiagOp(){};
 	virtual PairUwordT<T> apply(const uword& conf_in) const = 0;
   };
-
-  // *** function which fills a vector of ElementartOps from a file
-  void fillElementaryOps(vector<ElementaryOp*> eop_ptr_vec, string file_name){
-	ifstream file(file_name);
-	string line;
-	while (getline(file, line)){
-	  stringstream ss(line);
-	  string line_value;
-	  vector<string> line_values;
-	  while(getline(ss, line_value, ',')){
-		line_values.push_back(line_value);
-		cout << line_value << endl;
-	  }
-	}
-  } 
 
   // *** ---------------- *** //
 
