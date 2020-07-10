@@ -26,6 +26,7 @@ namespace quantum_solver_ed{
 	uword& operator[](uword pos);
 	urowvec apply(const urowvec& conf_vec_in) const;
 	void print(ostream& os) const;
+	void fill(vector<uword> indices_int, T amplitude_val);
   private:
 	uword n_sites;
 	urowvec perm;
@@ -36,7 +37,7 @@ namespace quantum_solver_ed{
   template<typename T>
   Symmetry<T>::Symmetry(uword n_sites){
 	this->n_sites = n_sites;
-	perm = urowvec(n_sites);
+	this->perm = urowvec(n_sites);
 	for (uword i=0; i<n_sites; i++)
 	  this->perm[i] = i;
 	this->chi = 1;
@@ -110,10 +111,21 @@ namespace quantum_solver_ed{
 
   template<typename T>
   void Symmetry<T>::print(ostream& os) const{
-	os << this->getName() << "|";
+	os << this->getName() << " |";
 	for (uword i=0; i<this->getNumSites(); i++)
 	  os << " " << (*this)[i];
 	os << " | " << this->getChi() <<  " |";
+  }
+
+  template<typename T>
+  void Symmetry<T>::fill(vector<uword> indices_int, T amplitude_val){
+	if (n_sites != indices_int.size()){
+	  throw logic_error("In Symmetry::fill. Number of index entries shoud be equal to n_sites.");
+	}
+	for (uword i=0; i<indices_int.size(); ++i){
+	  	this->perm[i] = indices_int[i];
+	}
+	this->chi = amplitude_val;
   }
 
   // *** ------------------------ *** //

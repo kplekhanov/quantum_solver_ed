@@ -2,7 +2,7 @@
 #define HILBERT_SYM_H
 
 #include "hilbertBrut.cpp"
-#include "symmetryBones.cpp"
+#include "symmetry.cpp"
 #include "word.cpp"
 
 
@@ -12,12 +12,13 @@ namespace quantum_solver_ed{
 
   template <typename T=cx_double>
   class HilbertSym: public HilbertBase{
-	typedef vector<SymmetryBones<T>*> VectorSymPtr;
+	typedef vector<Symmetry<T>*> VectorSymPtr;
   public:
 	HilbertSym(const urowvec& localhs_sizes_int);
 	const HilbertSym* getHilPtr() const;
 	bool checkSymmetric() const;
-	void addSym(SymmetryBones<T>* symptr);
+	void addSym(Symmetry<T>* symptr);
+	void readSymFromFile(string file_name, char delimiter=';');
 	uword getConfInt(uword i) const;
 	uword getConfPair(const uword& confint) const;
 	PairUwordT<T> getSymPair(const uword& confint) const;
@@ -59,10 +60,41 @@ namespace quantum_solver_ed{
 
   template <typename T>
   inline
-  void HilbertSym<T>::addSym(SymmetryBones<T>* symptr){
+  void HilbertSym<T>::addSym(Symmetry<T>* symptr){
 	this->symptr_vec.push_back(symptr);
   }
 
+  // *** function which fills HilbertSym with symmetries from a csv file
+  // *** the number of elements per line has to be num_sites + 1
+  // *** since each symmetry maps a site to a site and has a character chi
+  template<typename T>
+  void HilbertSym<T>::readSymFromFile(string file_name, char delimiter){
+	ifstream file(file_name);
+	string line;
+	uword index(0);
+	while (getline(file, line)){
+	  stringstream ss(line);
+	  string line_value;
+	  vector<string> line_values;
+	  while(getline(ss, line_value, delimiter)){
+		line_values.push_back(line_value);
+	  }
+	  vector<string> indices_str(vector<string>(line_values.begin(), line_values.end()-1));
+	  vector<uword> indices_int;
+	  for (uword i=0; i<indices_str.size(); i++){
+		indices_int.push_back(atoi(indices_str.at(i).c_str()));
+	  }
+	  istringstream amplitude_iss(line_values.back());
+	  T amplitude_val;
+	  amplitude_iss >> amplitude_val;
+	  Symmetry<T>* symptr = new Symmetry<T>(this->num_sites);
+	  symptr->fill(indices_int, amplitude_val);
+	  symptr->setName("sym " + to_string(index));
+	  this->addSym(symptr);
+	  index++;
+	}
+  }
+  
   template <typename T>
   inline
   uword HilbertSym<T>::getConfInt(uword i) const{
@@ -91,7 +123,7 @@ namespace quantum_solver_ed{
   PairUword HilbertSym<T>::getRep(const uword& confint) const{
 	uword index_min(0), confint_min(confint);
 	for (uword i=0; i<this->symptr_vec.size(); ++i){
-	  SymmetryBones<T>& sym_ref = *(this->symptr_vec[i]);
+	  Symmetry<T>& sym_ref = *(this->symptr_vec[i]);
 	  uword confint_new = this->confVec2confInt(
 												sym_ref.apply(this->confInt2confVec(confint)));
 	  if (confint_new < confint_min){
@@ -107,7 +139,7 @@ namespace quantum_solver_ed{
 	int deg = 0;
 	T sum_chi = 0;
 	for (uword i=0; i<this->symptr_vec.size(); ++i){
-	  SymmetryBones<T>& sym_ref = *(this->symptr_vec[i]);
+	  Symmetry<T>& sym_ref = *(this->symptr_vec[i]);
 	  if (this->confVec2confInt(sym_ref.apply(this->confInt2confVec(confint)))
 		  == confint){
 		deg ++;

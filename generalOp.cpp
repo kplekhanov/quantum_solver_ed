@@ -308,7 +308,7 @@ namespace quantum_solver_ed{
 	cout << endl;
   }
 
-  // *** function which fills a vector of ElementartOps from a file
+  // *** function which creates/adds a GeneralOp term from a csv file
   // *** here S is the template for different ElementaryOps
   // *** S has to have a constructor which takes no parameters
   template<typename T>
@@ -325,7 +325,7 @@ namespace quantum_solver_ed{
 	  }
 	  vector<string> indices_str(vector<string>(line_values.begin(), line_values.end()-1));
 	  vector<uword> indices_int;
-	  for (uword i=0; i< indices_str.size(); i++){
+	  for (uword i=0; i<indices_str.size(); ++i){
 		indices_int.push_back(atoi(indices_str.at(i).c_str()));
 	  }
 	  S* s_ptr = new S();

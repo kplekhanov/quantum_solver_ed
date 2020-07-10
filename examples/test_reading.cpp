@@ -1,4 +1,4 @@
-#include "../hilbert.cpp"
+#include "../hilbertSym.cpp"
 #include "../waveFon.cpp"
 #include "../generalOp.cpp"
 //#include "../opBoseHubbard.cpp"
@@ -13,8 +13,8 @@ using namespace std;
 int main(int argc, char *argv[]){
   // variables
   const double pi = std::acos(-1);
-  uword N = 16;
-  uword Qn = 8;
+  uword N = 10;
+  uword Qn = 5;
   wall_clock timer;
   urowvec localSizes = urowvec(N, fill::ones)*2;
   double k = 0; // wave-vector number
@@ -22,10 +22,12 @@ int main(int argc, char *argv[]){
   // creating the HS
   cout << "Testing Hil" << endl;
   timer.tic();
-  Hilbert hil(localSizes);
+  HilbertSym<cx_double> hil(localSizes);
+  hil.readSymFromFile("input_sym_10_complex.csv");
   hil.createWithFixedQn(Qn);
-  const Hilbert* hil_ptr = hil.getHilPtr();
-  cout << "Creating Hil took " << timer.toc() << endl << endl;
+  const HilbertSym<cx_double>* hil_ptr = hil.getHilPtr();
+  cout << "Creating HilSym took " << timer.toc() << endl;
+  hil.printSymmetries();
 
   GeneralOp<cx_double> ham(hil_ptr);
   ham.readFromFile<SpiSmj<cx_double>>("input_ops_2is_complex.csv");
