@@ -114,7 +114,7 @@ namespace quantum_solver_ed{
   }
 
 
-  // *** in-plane DM interactions -- Sp
+  // *** in-plane DM interactions -- Sz Sp
   template<typename T=double>
   class SziSpj: public OffDiagOp<T>{
   public:
@@ -151,7 +151,7 @@ namespace quantum_solver_ed{
   }
 
   
-  // *** in-plane DM interactions -- Sm
+  // *** in-plane DM interactions -- Sz Sm
   template<typename T=double>
   class SziSmj: public OffDiagOp<T>{
   public:
@@ -187,6 +187,86 @@ namespace quantum_solver_ed{
 	  return PairUwordT<T>(0 , 0);
   }
 
+  
+  // *** in-plane DM interactions -- Sz Sx
+  template<typename T=double>
+  class SziSxj: public OffDiagOp<T>{
+  public:
+	SziSxj(){};
+	SziSxj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	PairUwordT<T> apply(const uword& conf_in) const;
+  private:
+	uword i, j;
+  };
+
+  template<typename T>
+  SziSxj<T>::SziSxj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	this->fill(hil_ptr, indices_int);
+  }
+
+  template<typename T>
+  void SziSxj<T>::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In SziSxj::fill. Vector of indices should have size 2." );
+	}
+	this->hil_ptr = hil_ptr;
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Sz_" + to_string(this->i) + ".Sx_" + to_string(this->j);
+  }
+
+  template<typename T>
+  PairUwordT<T> SziSxj<T>::apply(const uword& conf_in) const{
+	if ( ((conf_in >> j) & 1) == 0 )
+	  return PairUwordT<T>(conf_in | (1 << j), (double((conf_in >> i) & 1) - 0.5) * 0.5 );
+	else
+	  return PairUwordT<T>(conf_in & ~(1 << j), (double((conf_in >> i) & 1) - 0.5) * 0.5 );
+  }
+  
+
+  // *** in-plane DM interactions -- Sz Sy
+  template<typename T>
+  class SziSyj: public OffDiagOp<T>{
+  public:
+	SziSyj(){};
+	SziSyj(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	void fill(const HilbertBones* hil_ptr, vector<uword> indices_int);
+	PairUwordT<T> apply(const uword& conf_in) const;
+  private:
+	uword i, j;
+  };
+
+  template<typename T>
+  SziSyj<T>::SziSyj(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (is_same<T, double>::value){
+	  throw logic_error( "In SziSyj::SziSyj. This operator can't be real" );
+	}
+	this->fill(hil_ptr, indices_int);
+  }
+
+  template<typename T>
+  void SziSyj<T>::fill(const HilbertBones* hil_ptr, vector<uword> indices_int){
+	if (indices_int.size() != 2){
+	  throw logic_error( "In SziSyj::fill. Vector of indices should have size 2." );
+	}
+	this->hil_ptr = hil_ptr;
+	this->i = indices_int.at(0);
+	this->j = indices_int.at(1);
+	this->name = "Sz_" + to_string(this->i) + ".Sy_" + to_string(this->j);
+  }
+
+  template<typename T>
+  PairUwordT<T> SziSyj<T>::apply(const uword& conf_in) const{
+	if ( ((conf_in >> j) & 1) == 0 ){
+	  return PairUwordT<T>(conf_in | (1 << j),
+						   cx_double(0,-(double((conf_in >> i) & 1) - 0.5) * 0.5));
+	}
+	else
+	  return PairUwordT<T>(conf_in & ~(1 << j),
+						   cx_double(0, (double((conf_in >> i) & 1) - 0.5) * 0.5));
+  }
+  
   // *** ------------------ *** //
 
 } //* namespace quantum_solver_ed

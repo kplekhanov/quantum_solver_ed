@@ -28,16 +28,19 @@ int main(int argc, char *argv[]){
   const HilbertSym<cx_double>* hil_ptr = hil.getHilPtr();
   cout << "Creating HilSym took " << timer.toc() << endl;
   hil.printSymmetries();
+  cout << endl;
 
   GeneralOp<cx_double> ham(hil_ptr);
   ham.readFromFile<SpiSmj<cx_double>>("input_ops_2is_complex.csv");
   ham.readFromFile<Szi>("input_ops_1i.csv");
   ham.print();
+  cout << endl;
 
   GeneralOp<cx_double> ham1(hil_ptr);
   ham1.readFromFile<BdagiBj<cx_double>>("input_ops_2is_complex.csv");
   ham1.readFromFile<Ni>("input_ops_1i.csv");
   ham1.print();
+  cout << endl;
 
   return 0;
 }

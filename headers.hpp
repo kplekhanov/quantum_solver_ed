@@ -22,7 +22,6 @@ namespace quantum_solver_ed{
   typedef pair<uword,uword> PairUword;
   template <typename T> using PairUwordT = pair<uword,T>;
   template <typename T> using MyVec = Col<T>;
-  
 } //* namespace quantum_solver_ed
 
 

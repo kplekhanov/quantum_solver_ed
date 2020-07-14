@@ -210,7 +210,7 @@ namespace quantum_solver_ed{
 	  }
 	}
 	if (!(*matrix_ptr).is_hermitian(1e-10))
-	  throw logic_error( "In GeneralOp::createDenseMatrixNonSym. Matrix non-hermitian." );
+	  throw logic_error( "In GeneralOp::createMatrixNonSym. Matrix non-hermitian." );
   }
   
   template<typename T>
@@ -241,7 +241,7 @@ namespace quantum_solver_ed{
 	  }
 	}
 	if (!(*matrix_ptr).is_hermitian(1e-10))
-	  throw logic_error( "In GeneralOp::createDenseMatrixSym. Matrix non-hermitian." );
+	  throw logic_error( "In GeneralOp::createMatrixSym. Matrix non-hermitian." );
   }
 
   template<typename T>
