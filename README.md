@@ -1,7 +1,7 @@
 # quantum_solver_ed
 
 Cpp library for exact diagonalization of interacting quantum many-body systems.\
-See examples to see basic routines
+Go to "examples" to see basic routines
 
 **What it can do**:
 
