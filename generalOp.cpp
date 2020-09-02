@@ -24,10 +24,9 @@ namespace quantum_solver_ed{
 	void append(DiagOp* dop_ptr, cx_double coef);
 	void append(OffDiagOp<T>* oop_ptr, T coef);
 	WaveFon<T> apply(const WaveFon<T>& phi_in) const;
-	void doLanczosOnFly(uword N, double err=1e-10);
+	Col<double> doLanczosOnFly(uword N, double err=1e-10);
 	template<typename Q>
 	void createMatrix(Q* matrix_ptr);
-	Col<double> getEigvals() const;
 	void print() const;
 	template <typename S>
 	void readFromFile(string file_name, char delimiter=';');
@@ -37,7 +36,6 @@ namespace quantum_solver_ed{
 	VectorOffDiagOpPtr oop_ptr_vec;
 	vector<double> dop_coef_vec;
 	vector<T> oop_coef_vec;
-	Col<double> eigvals;
 	WaveFon<T> applyNonSym(const WaveFon<T>& phi_in) const;
 	WaveFon<T> applySym(const WaveFon<T>& phi_in) const;
 	template<typename Q>
@@ -245,11 +243,11 @@ namespace quantum_solver_ed{
   }
 
   template<typename T>
-  void GeneralOp<T>::doLanczosOnFly(uword N, double err){
-	Mat<T> tridiag = Mat<T>(N, N, fill::zeros);
-	Mat<T> tridiag_temp;
+  Col<double> GeneralOp<T>::doLanczosOnFly(uword N, double err){
+	Mat<double> tridiag = Mat<double>(N, N, fill::zeros);
+	Mat<double> tridiag_temp;
 	Col<double> eigvals;
-	WaveFon<T> v_0(this->hil_ptr);
+	WaveFon<T> v_0(this->hil_ptr); // initialized to zero
 	WaveFon<T> v_1(this->hil_ptr);
 	WaveFon<T> w_1(this->hil_ptr);
 
@@ -257,13 +255,13 @@ namespace quantum_solver_ed{
   
 	v_1.randomise();
 	double b_1 = 0;
-	T a_1 = 0;
+	double a_1 = 0;
 	double e_min = 1e16;
 	uword i = 0;
 	while (i < N){
 	  timer.tic(); //
 	  w_1 = this->apply(v_1) - b_1 * v_0;
-	  a_1 = w_1 * v_1;
+	  a_1 = real(w_1 * v_1);
 	  w_1 = w_1 - a_1 * v_1;
 	  b_1 = w_1.getNorm();
 	  v_0 = v_1;
@@ -277,16 +275,12 @@ namespace quantum_solver_ed{
 	  tridiag_temp = tridiag.submat(0, 0, i, i);
 	  eigvals = eig_sym(tridiag_temp);
 
-	  if (e_min - eigvals[0] < err) i = N;
-	  else ++i;      
+	  if (abs(e_min - eigvals[0]) < err)
+		break;
+	  ++i;      
 	  e_min = eigvals[0];
 	}
-	this->eigvals = eigvals;
-  }
-  
-  template<typename T>
-  Col<double> GeneralOp<T>::getEigvals() const{
-	return this->eigvals;
+	return eigvals;
   }
 
   template<typename T>
