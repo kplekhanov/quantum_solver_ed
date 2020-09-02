@@ -15,7 +15,7 @@ Go to "examples" to see basic routines
 **What it can't do for instance (work in progress)**:
 
 */ Can't work with fermions\
-*/ Can't do "fancier" algorithms such as Jacobi–Davidson
+*/ Can't do "fancier" algorithms such as Jacobi–Davidson on-fly
 
 **Features**:
 
