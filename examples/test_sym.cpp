@@ -1,8 +1,7 @@
-#include "../hilbertSym.cpp"
-#include "../waveFon.cpp"
-#include "../symmetry.cpp"
-#include "../generalOp.cpp"
-#include "../opBoseHubbard.cpp"
+#include "../lib/symmetry.hpp"
+#include "../lib/hilbertSym.hpp"
+#include "../lib/generalOp.hpp"
+#include "../lib/opBoseHubbard.hpp"
 
 
 using namespace quantum_solver_ed;
@@ -14,11 +13,15 @@ int main(int argc, char *argv[]){
   // variables
   const double pi = std::acos(-1);
   const cx_double cx_i(0, 1);
-  uword N = 24;
-  uword Qn = 12;
+  uword N = 32;
+  uword Qn = 16;
   wall_clock timer;
   urowvec localSizes = urowvec(N, fill::ones)*2;
   double k = 0; // wave-vector number
+
+  // OMP_NUM_THREADS
+  cout << "For all customary operations assuming that the number of available cores is ";
+  cout << OMP_NUM_THREADS << endl << endl;
 
   // creating the HS
   cout << "Testing HilSym" << endl;
@@ -33,15 +36,15 @@ int main(int argc, char *argv[]){
 	hil.addSym(sym_ptr);
   }
   hil.createWithFixedQn(Qn);
-  const HilbertSym<cx_double>* hil_ptr = hil.getHilPtr();
+  const HilbertBones* hil_ptr = hil.getHilPtr();
   cout << "Creating HilSym took " << timer.toc() << endl << endl;
 
   // creating the Hamiltonian
   GeneralOp<cx_double> ham(hil_ptr);
   for (uword i=0; i<N; i++){
-	ham.append(new Ni(hil_ptr, i), 0.123);
-	ham.append(new BdagiBj<cx_double>(hil_ptr, i, (i+1)%N), -1.0);
-	ham.append(new BdagiBj<cx_double>(hil_ptr, (i+1)%N, i), -1.0);
+	ham.append(new Ni(hil_ptr, {i}), 0.123);
+	ham.append(new BdagiBj<cx_double>(hil_ptr, {i, (i+1)%N}), -1.0);
+	ham.append(new BdagiBj<cx_double>(hil_ptr, {(i+1)%N, i}), -1.0);
   }
   ham.print();
 
@@ -71,8 +74,8 @@ int main(int argc, char *argv[]){
   cout << "Creating sparse matrix took " << timer.toc() << endl << endl;
 
   //
-  cx_vec eigval = eigs_gen(ham_sp_mat_2, 2);
-  cout << "Energy " << eigval;
+  cx_vec eigval = eigs_gen(ham_sp_mat_2, 5);
+  cout << "Energies" << endl << eigval;
   
   return 0;
 }

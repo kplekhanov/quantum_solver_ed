@@ -1,41 +1,12 @@
-#ifndef HILBERT_SYM_H
-#define HILBERT_SYM_H
-
-#include "hilbertBrut.cpp"
-#include "symmetry.cpp"
-#include "word.cpp"
+#include "../lib/hilbertSym.hpp"
 
 
 namespace quantum_solver_ed{
   using namespace arma;
   using namespace std;
 
-  template <typename T=cx_double>
-  class HilbertSym: public HilbertBase{
-	typedef vector<Symmetry<T>*> VectorSymPtr;
-  public:
-	HilbertSym(const urowvec& localhs_sizes_int);
-	const HilbertSym* getHilPtr() const;
-	bool checkSymmetric() const;
-	void addSym(Symmetry<T>* symptr);
-	void readSymFromFile(string file_name, char delimiter=';');
-	uword getConfInt(uword i) const;
-	uword getConfPair(const uword& confint) const;
-	PairUwordT<T> getSymPair(const uword& confint) const;
-	PairUword getRep(const uword& confint) const;
-	int testRep(const uword& confint) const;
-	void fill(uword index, const uword& confint, HilMap* confint_map_tmp_ptr);
-	void create();
-	void createWithFixedQn(uword qn_tot=0);
-	void print() const;
-	void printSymmetries() const;
-  private:
-	uword num_states_nonsym;
-	uword tot_shift, half_shift, mask_left, mask_rght;
-	VectorSymPtr symptr_vec;
-	uvec confint_vec, rep_lookup_vec;
-	HilMap confint_map_left, confint_map_rght;
-  };
+  // *** ----------------- *** //
+  // *** HilbertSym class  *** //
 
   template <typename T>
   HilbertSym<T>::HilbertSym(const urowvec& localhs_sizes_int)
@@ -44,24 +15,6 @@ namespace quantum_solver_ed{
 	this->half_shift = this->localhs_shifts[this->num_sites / 2];
 	this->mask_left = (uword(1) << this->half_shift) - 1;
 	this->mask_rght = ((uword(1) << this->tot_shift) - 1) << this->half_shift;
-  }
-
-  template <typename T>
-  inline
-  const HilbertSym<T>* HilbertSym<T>::getHilPtr() const{
-	return this;
-  }
-
-  template <typename T>
-  inline
-  bool HilbertSym<T>::checkSymmetric() const{
-	return true;
-  }
-
-  template <typename T>
-  inline
-  void HilbertSym<T>::addSym(Symmetry<T>* symptr){
-	this->symptr_vec.push_back(symptr);
   }
 
   // *** function which fills HilbertSym with symmetries from a csv file
@@ -94,12 +47,6 @@ namespace quantum_solver_ed{
 	  index++;
 	}
   }
-  
-  template <typename T>
-  inline
-  uword HilbertSym<T>::getConfInt(uword i) const{
-	return this->confint_vec[i];
-  }
 
   template <typename T>
   uword HilbertSym<T>::getConfPair(const uword& confint) const{
@@ -124,8 +71,7 @@ namespace quantum_solver_ed{
 	uword index_min(0), confint_min(confint);
 	for (uword i=0; i<this->symptr_vec.size(); ++i){
 	  Symmetry<T>& sym_ref = *(this->symptr_vec[i]);
-	  uword confint_new = this->confVec2confInt(
-												sym_ref.apply(this->confInt2confVec(confint)));
+	  uword confint_new = this->confVec2confInt(sym_ref.apply(this->confInt2confVec(confint)));
 	  if (confint_new < confint_min){
 		confint_min = confint_new;
 		index_min = i;
@@ -163,15 +109,15 @@ namespace quantum_solver_ed{
 	  uword rep_deg = uword(rep_deg_int);
 	  uword rep_w = Word::getWrd(rep_confpair.first, rep_deg, 0);
 	  auto search = confint_map_tmp_ptr->find(rep_w);
-	  // if the rep of the orbit is already in here we check rep_index
+	  //* if the rep of the orbit is already in here we check rep_index
 	  if (search != confint_map_tmp_ptr->end()){
 		uword rep_index = search->second;
 		this->rep_lookup_vec[index] = Word::getWrd(rep_index, rep_deg,
 												   rep_confpair.second);
 	  }
-	  // if not we add rep to the orbit and
-	  // we get rep_index = num_states; num_states ++
-	  // ATTENTION: rep_lookup_vec[index] gives index of the rep, not the rep
+	  //* if not we add rep to the orbit and
+	  //* we get rep_index = num_states; num_states ++
+	  //* ATTENTION: rep_lookup_vec[index] gives index of the rep, not the rep
 	  else{
 		confint_map_tmp_ptr->insert(PairUword(rep_w, this->num_states));
 		this->confint_vec[this->num_states] = rep_w;
@@ -330,7 +276,14 @@ namespace quantum_solver_ed{
 	}
   }
 
+  // *** ------------------------ *** //
+
+  // *** ------------------------ *** //
+  // *** instatation of template  *** //
+
+  template class HilbertSym<double>;
+  template class HilbertSym<cx_double>;
+
+  // *** ------------------------ *** //
+  
 } //* namespace quantum_solver_ed
-
-
-#endif //* HILBERT_SYM_H

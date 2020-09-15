@@ -1,7 +1,9 @@
 #ifndef HEADERS_H
 #define HEADERS_H
 
-#define OMP_NUM_THREADS 32
+#ifndef OMP_NUM_THREADS
+#define OMP_NUM_THREADS 1
+#endif
 
 #include <armadillo>
 #include <stdexcept>

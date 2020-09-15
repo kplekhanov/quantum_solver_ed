@@ -1,11 +1,4 @@
-#ifndef GENERAL_OP_H
-#define GENERAL_OP_H
-
-#include "hilbertSym.cpp"
-#include "elementaryOp.cpp"
-#include "waveFon.cpp"
-#include "word.cpp"
-
+#include "../lib/generalOp.hpp"
 
 namespace quantum_solver_ed{
   using namespace arma;
@@ -13,36 +6,6 @@ namespace quantum_solver_ed{
 
   // *** ------------------------ *** //
   // *** GeneralOp acts on states *** //
-
-  template<typename T=double>
-  class GeneralOp{
-	typedef vector<DiagOp*> VectorDiagOpPtr;
-	typedef vector<OffDiagOp<T>*> VectorOffDiagOpPtr;
-  public:
-	GeneralOp(const HilbertBones* hil_ptr);
-	void append(DiagOp* dop_ptr, double coef);
-	void append(DiagOp* dop_ptr, cx_double coef);
-	void append(OffDiagOp<T>* oop_ptr, T coef);
-	WaveFon<T> apply(const WaveFon<T>& phi_in) const;
-	Col<double> doLanczosOnFly(uword N, double err=1e-10);
-	template<typename Q>
-	void createMatrix(Q* matrix_ptr);
-	void print() const;
-	template <typename S>
-	void readFromFile(string file_name, char delimiter=';');
-  private:
-	const HilbertBones* hil_ptr;
-	VectorDiagOpPtr dop_ptr_vec;
-	VectorOffDiagOpPtr oop_ptr_vec;
-	vector<double> dop_coef_vec;
-	vector<T> oop_coef_vec;
-	WaveFon<T> applyNonSym(const WaveFon<T>& phi_in) const;
-	WaveFon<T> applySym(const WaveFon<T>& phi_in) const;
-	template<typename Q>
-	void createMatrixNonSym(Q* matrix_ptr);
-	template<typename Q>
-	void createMatrixSym(Q* matrix_ptr);
-  };
 
   template<typename T>
   GeneralOp<T>::GeneralOp(const HilbertBones* hil_ptr){
@@ -166,7 +129,7 @@ namespace quantum_solver_ed{
 	}
 	return phi_out;
   }
-
+  
   template<typename T>
   template<typename Q>
   void GeneralOp<T>::createMatrix(Q* matrix_ptr){
@@ -331,9 +294,19 @@ namespace quantum_solver_ed{
 	}
   }
 
-  // *** ---------------- *** //
+  // *** ------------------------ *** //
+
+  // *** ------------------------ *** //
+  // *** instatation of template  *** //
+  
+  template class GeneralOp<double>;
+  template class GeneralOp<cx_double>;
+
+  template void GeneralOp<double>::createMatrix(Mat<double>* matrix_ptr);
+  template void GeneralOp<cx_double>::createMatrix(Mat<cx_double>* matrix_ptr);
+  template void GeneralOp<double>::createMatrix(SpMat<double>* matrix_ptr);
+  template void GeneralOp<cx_double>::createMatrix(SpMat<cx_double>* matrix_ptr);
+
+  // *** ------------------------ *** //
 
 } //* namespace quantum_solver_ed
-
-
-#endif //* GENERAL_OP_H

@@ -1,5 +1,4 @@
-#include "../hilbert.cpp"
-#include "../waveFon.cpp"
+#include "../hilbert.hpp"
 #include "../generalOp.cpp"
 #include "../opSpinOneHalf.cpp"
 

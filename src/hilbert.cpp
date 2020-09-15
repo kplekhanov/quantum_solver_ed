@@ -1,28 +1,12 @@
-#ifndef HILBERT_H
-#define HILBERT_H
-
-#include "hilbertBrut.cpp"
+#include "../lib/hilbert.hpp"
 
 
 namespace quantum_solver_ed{
   using namespace arma;
   using namespace std;
 
-  class Hilbert: public HilbertBase{
-	// same as HilbertBrut but has two maps to search faster
-  public:
-	Hilbert(const urowvec& localhs_sizes_int);
-	const Hilbert* getHilPtr() const;
-	uword getConfInt(uword i) const;
-	uword getConfPair(const uword& confint) const;
-	void create();
-	void createWithFixedQn(uword qn_tot=0);
-	void print() const;
-  protected:
-	uword half_shift, mask_left, mask_rght;
-	uvec confint_vec;
-	HilMap confint_map_left, confint_map_rght;
-  };
+  // *** ------------- *** //
+  // *** Hilbert class  *** //
 
   Hilbert::Hilbert(const urowvec& localhs_sizes_int)
 	:HilbertBase(localhs_sizes_int){
@@ -30,16 +14,6 @@ namespace quantum_solver_ed{
 	this->half_shift = this->localhs_shifts[this->num_sites / 2];
 	this->mask_left = (uword(1) << this->half_shift) - 1;
 	this->mask_rght = ((uword(1) << tot_shift) - 1) << this->half_shift;
-  }
-
-  inline
-  const Hilbert* Hilbert::getHilPtr() const{
-	return this;
-  }
-
-  inline
-  uword Hilbert::getConfInt(uword i) const{
-	return this->confint_vec[i];
   }
 
   uword Hilbert::getConfPair(const uword& confint) const{
@@ -62,10 +36,8 @@ namespace quantum_solver_ed{
 	}
 	HilbertBrut hil_left(localhs_sizes_int_left);
 	HilbertBrut hil_rght(localhs_sizes_int_rght);
-	cout << this->num_states << endl;
 	hil_left.create();
 	hil_rght.create();
-	cout << this->num_states << endl;
 
 	//* some variables
 	uword conf_left, conf_rght, conf_new, index_rght;
@@ -170,7 +142,6 @@ namespace quantum_solver_ed{
 	}
   }
 
+  // *** ------------- *** //
+  
 } //* namespace quantum_solver_ed
-
-
-#endif //* HILBERT_H
