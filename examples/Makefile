@@ -4,7 +4,7 @@ MAIN_DIR = ..
 
 #--- binaries to make
 
-BIN = test test_sym test_spin test_read
+BIN = test_bos test_hcb test_sym test_spin2 test_spinS test_read
 
 #--- geting all the important variables
 

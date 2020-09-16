@@ -1,54 +1,41 @@
-#include "../lib/symmetry.hpp"
-#include "../lib/hilbertSym.hpp"
+#include "../lib/hilbert.hpp"
 #include "../lib/generalOp.hpp"
-#include "../lib/opBoseHubbard.hpp"
+#include "../lib/opHardCoreBose.hpp"
 
 
 using namespace quantum_solver_ed;
 using namespace arma;
 using namespace std;
 
-
 int main(int argc, char *argv[]){
   // variables
   const double pi = std::acos(-1);
-  const cx_double cx_i(0, 1);
-  uword N = 24;
-  uword Qn = 12;
+  uword N = 10;
+  uword Qn = 5;
   wall_clock timer;
   urowvec localSizes = urowvec(N, fill::ones)*2;
   double k = 0; // wave-vector number
 
-  // OMP_NUM_THREADS
-  cout << "For all customary operations assuming that the number of available cores is ";
-  cout << OMP_NUM_THREADS << endl << endl;
-
   // creating the HS
-  cout << "Testing HilSym" << endl;
+  cout << "Testing Hil" << endl;
   timer.tic();
-  HilbertSym<cx_double> hil(localSizes);
-  for (uword i=0; i<N; i++){
-	Symmetry<cx_double>* sym_ptr = new Symmetry<cx_double>(N);
-	sym_ptr->setName("t_"+std::to_string(i)+".k_"+std::to_string(k));
-	sym_ptr->setChi(std::exp(2 * pi * i * k * cx_i / double(N)));
-	for (uword j=0; j<N; j++)
-	  (*sym_ptr)[j] = (j + i) % N;
-	hil.addSym(sym_ptr);
-  }
+  Hilbert hil(localSizes);
   hil.createWithFixedQn(Qn);
   const HilbertBones* hil_ptr = hil.getHilPtr();
-  cout << "Creating HilSym took " << timer.toc() << endl << endl;
+  cout << "Creating Hil took " << timer.toc() << endl;
+  //hil.print();
+  cout << endl;
 
   // creating the Hamiltonian
-  GeneralOp<cx_double> ham(hil_ptr);
+  GeneralOp<double> ham(hil_ptr);
   for (uword i=0; i<N; i++){
-	ham.append(new Ni(hil_ptr, {i}), 0.123);
-	ham.append(new BdagiBj<cx_double>(hil_ptr, {i, (i+1)%N}), -1.0);
-	ham.append(new BdagiBj<cx_double>(hil_ptr, {(i+1)%N, i}), -1.0);
+	ham.append(new Ni_2(hil_ptr, {i}), 0.123);
+	ham.append(new BdagiBj_2<double>(hil_ptr, {i, (i+1)%N}), -1.0);
+	ham.append(new BdagiBj_2<double>(hil_ptr, {(i+1)%N, i}), -1.0);
   }
   ham.print();
   cout << endl;
-
+  
   // testing Lanczos
   cout << "Testing Lanczos" << endl;
   cout.precision(8);
@@ -57,26 +44,25 @@ int main(int argc, char *argv[]){
   cout << "Testing Lanczos took " << timer.toc() << endl << endl;
 
   // testing dense matrix
-  /*
   cout << "Creating dense matrix" << endl;
   cout.precision(8);
   timer.tic();
-  Mat<cx_double> ham_mat_2;
+  Mat<double> ham_mat_2;
   ham.createMatrix(&ham_mat_2);
   cout << "Creating dense matrix took " << timer.toc() << endl << endl;
-  */
+  //cout << ham_mat_2;
 
   // testing sparse matrix
   cout << "Creating sparse matrix" << endl;
   cout.precision(8);
   timer.tic();
-  SpMat<cx_double> ham_sp_mat_2;
+  SpMat<double> ham_sp_mat_2;
   ham.createMatrix(&ham_sp_mat_2);
   cout << "Creating sparse matrix took " << timer.toc() << endl << endl;
 
-  //
-  cx_vec eigval = eigs_gen(ham_sp_mat_2, 5);
-  cout << "Energies" << endl << eigval;
-  
+  // getting eigenvalues
+  vec eigval = eigs_sym(ham_sp_mat_2, 10);
+  cout << eigval;
+
   return 0;
 }

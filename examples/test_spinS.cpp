@@ -1,6 +1,6 @@
 #include "../lib/hilbert.hpp"
 #include "../lib/generalOp.hpp"
-#include "../lib/opBoseHubbard.hpp"
+#include "../lib/opSpinS.hpp"
 
 
 using namespace quantum_solver_ed;
@@ -10,8 +10,7 @@ using namespace std;
 int main(int argc, char *argv[]){
   // variables
   const double pi = std::acos(-1);
-  uword N = 10;
-  uword Qn = 5;
+  uword N = 12;
   wall_clock timer;
   urowvec localSizes = urowvec(N, fill::ones)*2;
   double k = 0; // wave-vector number
@@ -20,7 +19,7 @@ int main(int argc, char *argv[]){
   cout << "Testing Hil" << endl;
   timer.tic();
   Hilbert hil(localSizes);
-  hil.createWithFixedQn(Qn);
+  hil.create();
   const HilbertBones* hil_ptr = hil.getHilPtr();
   cout << "Creating Hil took " << timer.toc() << endl;
   //hil.print();
@@ -29,12 +28,13 @@ int main(int argc, char *argv[]){
   // creating the Hamiltonian
   GeneralOp<double> ham(hil_ptr);
   for (uword i=0; i<N; i++){
-	ham.append(new Ni(hil_ptr, {i}), 0.123);
-	ham.append(new BdagiBj<double>(hil_ptr, {i, (i+1)%N}), -1.0);
-	ham.append(new BdagiBj<double>(hil_ptr, {(i+1)%N, i}), -1.0);
+	ham.append(new Szi(hil_ptr, {i}), 0.123);
+	ham.append(new SpiSmj<double>(hil_ptr, {i, (i+1)%N}), -1.0);
+	ham.append(new SpiSmj<double>(hil_ptr, {(i+1)%N, i}), -1.0);
   }
   ham.print();
-  
+  cout << endl;
+
   // testing Lanczos
   cout << "Testing Lanczos" << endl;
   cout.precision(8);
@@ -49,7 +49,8 @@ int main(int argc, char *argv[]){
   Mat<double> ham_mat_2;
   ham.createMatrix(&ham_mat_2);
   cout << "Creating dense matrix took " << timer.toc() << endl << endl;
-
+  //cout << ham_mat_2;
+  
   // testing sparse matrix
   cout << "Creating sparse matrix" << endl;
   cout.precision(8);

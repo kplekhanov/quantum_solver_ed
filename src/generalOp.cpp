@@ -265,35 +265,6 @@ namespace quantum_solver_ed{
 	cout << endl;
   }
 
-  // *** function which creates/adds a GeneralOp term from a csv file
-  // *** here S is the template for different ElementaryOps
-  // *** S has to have a constructor which takes no parameters
-  template<typename T>
-  template<typename S>
-  void GeneralOp<T>::readFromFile(string file_name, char delimiter){
-	ifstream file(file_name);
-	string line;
-	while (getline(file, line)){
-	  stringstream ss(line);
-	  string line_value;
-	  vector<string> line_values;
-	  while(getline(ss, line_value, delimiter)){
-		line_values.push_back(line_value);
-	  }
-	  vector<string> indices_str(vector<string>(line_values.begin(), line_values.end()-1));
-	  vector<uword> indices_int;
-	  for (uword i=0; i<indices_str.size(); ++i){
-		indices_int.push_back(atoi(indices_str.at(i).c_str()));
-	  }
-	  S* s_ptr = new S();
-	  s_ptr->fill(this->hil_ptr, indices_int);
-	  istringstream amplitude_iss(line_values.back());
-	  T amplitude_val;
-	  amplitude_iss >> amplitude_val;
-	  this->append(s_ptr, amplitude_val);
-	}
-  }
-
   // *** ------------------------ *** //
 
   // *** ------------------------ *** //
