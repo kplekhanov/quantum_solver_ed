@@ -21,3 +21,4 @@ Go to "examples" to see basic routines
 **Requirements**:\
 */ Uses Armadillo (http://arma.sourceforge.net/) for basic linear algebra and internal storage of vectors, matrices, etc\
 */ Armadillo can also be nicely used as a wrapper around LAPACK, ARPACK, BLAS, etc
+*/ Recommended packages to install: cmake (for armadillo), libopenblas-dev, liblapack-dev, libarpack2-dev, libsuperlu-dev

@@ -14,16 +14,12 @@ $(OBJ): $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	mkdir -p $(dir $@)
 	$(CCCOM) -c $(CCFLAGS) -o $@ $<
 
-.PHONY: all clean test
+.PHONY: all clean
 
 all: $(OBJ)
 
 clean:
 	rm -rf build
-
-test:
-	echo $(SRC_DIR)
-	echo $(SRC)
 
 #--- dependency files
 
